@@ -21,7 +21,14 @@ def main():
     )
     sub = parser.add_subparsers(dest="command", required=True)
     for name in ("init-config", "init-db", "init-admin", "check", "backup"):
-        sub.add_parser(name)
+        command_parser = sub.add_parser(name)
+        if name == "init-admin":
+            command_parser.add_argument("--username")
+            command_parser.add_argument(
+                "--password-stdin",
+                action="store_true",
+                help="For automation only: read one password line from standard input, never a command-line password",
+            )
     config = sub.add_parser("configure")
     config.add_argument(
         "--host",
@@ -110,6 +117,29 @@ def main():
             from cafe import create_app
             from flask.cli import FlaskGroup
 
+            if args.command == "init-admin" and (args.password_stdin or args.username):
+                if not args.password_stdin or not args.username:
+                    raise RuntimeError(
+                        "Use both --username and --password-stdin for automation, or neither for interactive setup."
+                    )
+                if sys.stdin.isatty():
+                    raise RuntimeError(
+                        "--password-stdin requires redirected input; use normal interactive init-admin in a terminal."
+                    )
+                password = sys.stdin.readline(1026).rstrip("\r\n")
+                if len(password) > 1024:
+                    raise RuntimeError("Password exceeds 1024 characters.")
+                from cafe.commands import create_administrator
+                from click import ClickException
+
+                try:
+                    with create_app().app_context():
+                        create_administrator(args.username, password)
+                except ClickException as exc:
+                    exc.show()
+                    return exc.exit_code
+                print("Administrator created.")
+                return 0
             cli = FlaskGroup(create_app=create_app)
             from click import ClickException, Abort
 

@@ -17,3 +17,5 @@ The saved installation config is loaded independently of the caller's working di
 Existing usernames are rejected without overwriting them. Reset users through an authenticated admin; if all access is lost, a trusted operator can create a new username. The original Flask create-admin command remains available. Version 1.1 fixes its audit event to work outside a web request.
 
 Start with start.bat and sign in at /admin through your HTTPS IIS URL. See WINDOWS.md for local HTTP cookie testing and ADMIN.md for all website/catalog/order controls.
+
+For automation/CI only, the explicit flags `init-admin --username NAME --password-stdin` read a single password line from redirected standard input. Never place a password in a command-line argument, deployment JSON, environment dump or log. Ordinary VM setup should use the interactive command above. The automation path avoids Windows console-password prompts blocking unattended runners.

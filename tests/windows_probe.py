@@ -18,10 +18,18 @@ command = sys.argv[1]
 if command == "seed":
     password = secrets.token_urlsafe(24)
     result = subprocess.run(
-        [sys.executable, str(root / "manage.py"), "init-admin"],
-        input="windows-test-admin\n" + password + "\n" + password + "\n",
+        [
+            sys.executable,
+            str(root / "manage.py"),
+            "init-admin",
+            "--username",
+            "windows-test-admin",
+            "--password-stdin",
+        ],
+        input=password + "\n",
         text=True,
         capture_output=True,
+        timeout=30,
     )
     assert result.returncode == 0, result.stdout + result.stderr
     assert password not in result.stdout

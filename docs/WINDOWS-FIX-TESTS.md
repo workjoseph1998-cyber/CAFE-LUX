@@ -15,7 +15,7 @@ No original setup error output from the VM was supplied. These are confirmed cod
 
 ## Executed in this Linux cloud environment
 
-- **83 pytest checks passed**, including all 64 original storefront/security/ordering tests plus deployment configuration, supported/unsupported Python, invalid hosts, BOM/Unicode config, path isolation, config persistence, safe rerun, malformed config preservation and interactive first-admin subprocess tests.
+- **84 pytest checks passed**, including all 64 original storefront/security/ordering tests plus interactive/explicit-stdin admin bootstrap and deployment configuration, supported/unsupported Python, invalid hosts, BOM/Unicode config, path isolation, config persistence, safe rerun, malformed config preservation and first-admin subprocess tests.
 - A **new virtual environment** was created under a nested path containing spaces and Café Unicode. Pinned dependencies installed from wheels downloaded from PyPI with normal TLS verification. From an unrelated working directory, real init-config/init-db/check commands passed; clearing application environment variables still loaded persisted config. A second initialization preserved stored business content and an upload sentinel.
 - The same fresh installation refused a deliberately occupied 8000 and successfully started Waitress on 127.0.0.1:8000; /healthz and homepage functional requests passed. The temporary server was then stopped and its disposable data removed.
 - All PowerShell files parsed in **PowerShell 7.4.6 on Linux**. Command identity and missing/unsupported Python diagnostic tests passed with mocked discovery. These are not native Windows/batch tests.
@@ -30,7 +30,7 @@ https://github.com/workjoseph1998-cyber/CAFE-LUX/actions/workflows/windows-deplo
 
 It runs pytest and real .bat installation from a nested/space/Unicode directory, missing installation/Python, deliberate dependency failure, rerun preservation, admin creation, occupied-port rejection, Waitress HTTP readiness, duplicate refusal, tampered PID record refusal, stop/repeated stop and released-port checks.
 
-**At packaging, native Windows CI completion has not been verified.** A configured/started workflow is not a passing Windows test. Review the linked run results before treating native tests as passed. The Linux PowerShell checks do not establish Windows PowerShell 5.1, CMD, CIM/NTFS or Windows venv process behavior.
+**At packaging, native Windows CI completion has not been verified.** Initial Windows CI was observed running in the backend/operator step; unattended password input was changed to an explicit stdin bootstrap with timeouts rather than assuming a console prompt works under CI. Interactive VM admin prompts are unchanged and separately covered by the CLI test runner. A configured/started workflow is not a passing Windows test. Review the linked run results before treating native tests as passed. The Linux PowerShell checks do not establish Windows PowerShell 5.1, CMD, CIM/NTFS or Windows venv process behavior.
 
 ## Actual VM boundary
 

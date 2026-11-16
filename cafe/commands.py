@@ -33,6 +33,23 @@ def make_backup():
     return target
 
 
+def create_administrator(username, password):
+    import re
+
+    if not re.fullmatch(r"[A-Za-z0-9_.-]{3,100}", username) or len(password) < 12:
+        raise click.ClickException(
+            "Use a valid username and password of at least 12 characters."
+        )
+    if db().execute("SELECT 1 FROM users WHERE username=?", (username,)).fetchone():
+        raise click.ClickException("User exists. Change passwords in Admin / Users.")
+    db().execute(
+        "INSERT INTO users(username,password) VALUES (?,?)",
+        (username, generate_password_hash(password)),
+    )
+    audit("Created admin " + username)
+    db().commit()
+
+
 def register(app):
     app.config["DUMMY_HASH"] = generate_password_hash(
         "unusable-" + __import__("secrets").token_hex(16)
@@ -46,22 +63,7 @@ def register(app):
     @click.option("--username", prompt=True)
     @click.password_option(confirmation_prompt=True)
     def admin(username, password):
-        import re
-
-        if not re.fullmatch(r"[A-Za-z0-9_.-]{3,100}", username) or len(password) < 12:
-            raise click.ClickException(
-                "Use a valid username and password of at least 12 characters."
-            )
-        if db().execute("SELECT 1 FROM users WHERE username=?", (username,)).fetchone():
-            raise click.ClickException(
-                "User exists. Change passwords in Admin / Users."
-            )
-        db().execute(
-            "INSERT INTO users(username,password) VALUES (?,?)",
-            (username, generate_password_hash(password)),
-        )
-        audit("Created admin " + username)
-        db().commit()
+        create_administrator(username, password)
         click.echo("Administrator created.")
 
     @app.cli.command("backup")

@@ -138,6 +138,7 @@ def test_manage_admin_and_repeated_database_init(tmp_path, app):
             env=env,
             text=True,
             capture_output=True,
+            timeout=30,
             **kw,
         )
 
@@ -145,7 +146,10 @@ def test_manage_admin_and_repeated_database_init(tmp_path, app):
         result = run(["init-db"])
         assert result.returncode == 0, result.stderr
     secret = "synthetic-only-admin-pass"
-    result = run(["init-admin"], input="newoperator\n" + secret + "\n" + secret + "\n")
+    result = run(
+        ["init-admin", "--username", "newoperator", "--password-stdin"],
+        input=secret + "\n",
+    )
     assert result.returncode == 0, result.stdout + result.stderr
     assert secret not in result.stdout
     from cafe.db import db
@@ -161,3 +165,13 @@ def test_manage_admin_and_repeated_database_init(tmp_path, app):
         assert db().execute("SELECT count(*) FROM products").fetchone()[0] == 2
     result = run(["check"])
     assert result.returncode == 0, result.stderr
+
+
+def test_interactive_admin_prompts_are_preserved(app):
+    result = app.test_cli_runner().invoke(
+        args=["create-admin"],
+        input="prompt-test-admin\nsynthetic-prompt-password\nsynthetic-prompt-password\n",
+    )
+    assert result.exit_code == 0, result.output
+    assert "Administrator created." in result.output
+    assert "synthetic-prompt-password" not in result.output
