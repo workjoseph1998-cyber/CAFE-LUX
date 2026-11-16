@@ -45,7 +45,10 @@ def integer(value, minimum=0, maximum=100000000):
 
 
 def catalog(kind=None):
-    sql = "SELECT p.*, (SELECT min(v.price) FROM variants v WHERE v.product_id=p.id AND v.active=1 AND (v.stock IS NULL OR v.stock>0)) starting_price, c.name category FROM products p LEFT JOIN categories c ON p.category_id=c.id WHERE p.active=1"
+    sql = """SELECT p.*, c.name category, c.name_ar category_ar,
+        (SELECT min(v.price) FROM variants v WHERE v.product_id=p.id AND v.active=1) starting_price,
+        (SELECT max(v.price) FROM variants v WHERE v.product_id=p.id AND v.active=1) highest_price
+        FROM products p LEFT JOIN categories c ON p.category_id=c.id WHERE p.active=1"""
     args = []
     if kind:
         sql += " AND p.kind=?"
@@ -110,6 +113,7 @@ def priced_cart():
 def home():
     return render_template(
         "home.html",
+        categories=menu_categories(),
         drinks=[p for p in catalog("drink") if p["featured"]][:4],
         ground=[p for p in catalog("ground") if p["featured"]][:4],
     )
@@ -138,6 +142,7 @@ def shop():
         categories=db()
         .execute("SELECT * FROM categories ORDER BY position,name")
         .fetchall(),
+        menu_categories=menu_categories(kind),
         search=search,
     )
 
@@ -422,3 +427,14 @@ def media(filename):
 def health():
     db().execute("SELECT key FROM settings LIMIT 1").fetchone()
     return {"application": "cafe-lux", "status": "ok", "pid": os.getpid()}
+
+
+def menu_categories(kind=None):
+    sql = """SELECT c.*,count(p.id) product_count FROM categories c JOIN products p ON p.category_id=c.id AND p.active=1"""
+    args = []
+    if kind:
+        sql += " WHERE p.kind=?"
+        args.append(kind)
+    return (
+        db().execute(sql + " GROUP BY c.id ORDER BY c.position,c.name", args).fetchall()
+    )

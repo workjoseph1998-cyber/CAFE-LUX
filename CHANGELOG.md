@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.0 — Glass Menu
+
+- Add 19 coffee-shop items in five bilingual categories once per installation.
+- Preserve existing prices, stock, descriptions, availability, orders, accounts and settings.
+- Homepage/catalog category navigation and prices beneath every item.
+- Unconfigured prices are explicit and unpurchasable.
+- Smoked-glass cards, frosted navigation, translucent panels and accessible fallbacks.
+- Retain Windows fixes/schema v2; full source ZIP and updated screenshots.
+
 ## 1.1.0 — Windows deployment reliability
 
 - Persist installation settings; default new Windows data to C:\CafeLuxData.

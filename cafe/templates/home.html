@@ -1,4 +1,4 @@
-{% extends 'base.html' %}{% from '_cards.html' import cards with context %}{% block content %}
+{% extends 'base.html' %}{% from '_cards.html' import cards with context %}{% from '_categories.html' import categories_menu with context %}{% block content %}
 <section class="hero {% if site.hero_image %}custom-hero{% endif %}">{% if site.hero_image %}<img class="hero-background" src="{{ url_for('public.media',filename=site.hero_image) }}" alt="{{ site.brand }}">{% else %}<img class="hero-background" src="{{ url_for('static',filename='images/hero.jpg') }}" alt="Black and gold coffee cup in warm café light">{% endif %}<div class="hero-shade">
 </div>
 <div class="hero-copy">
@@ -41,6 +41,10 @@
 <i>◆</i>
 <span>CAFÉ LUX</span>
 </div>
+{% if categories %}<section class="section category-section">
+<div class="section-heading"><div><span class="eyebrow">THE LUX MENU</span><h2>{{ tr('Find your favorite') }}</h2></div><a class="underlink" href="{{ url_for('public.shop') }}">{{ tr('View full menu') }} →</a></div>
+{{ categories_menu(categories,ar,tr) }}
+</section>{% endif %}
 {% if site.show_drinks=='1' %}<section class="collection section">
 <div class="section-heading">
 <div>

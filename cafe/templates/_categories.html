@@ -1,0 +1,11 @@
+{% macro categories_menu(categories,ar,tr,kind=none) %}
+<nav class="category-menu" aria-label="{{ tr('Coffee categories') }}">
+{% for c in categories %}
+<a class="category-tile {{ 'selected' if request.args.get('category')==c.id|string }}" href="{{ url_for('public.shop',category=c.id,kind=kind) }}">
+<span class="category-symbol" aria-hidden="true">{{ '◒' if loop.index%2 else '◇' }}</span>
+<span>{{ c.name_ar if ar and c.name_ar else c.name }}<small>{{ c.product_count }} {{ tr('items') }}</small></span>
+<span aria-hidden="true">→</span>
+</a>
+{% endfor %}
+</nav>
+{% endmacro %}

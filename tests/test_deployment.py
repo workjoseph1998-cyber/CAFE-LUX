@@ -162,7 +162,12 @@ def test_manage_admin_and_repeated_database_init(tmp_path, app):
             db().execute("SELECT * FROM users WHERE username='newoperator'").fetchone()
         )
         assert check_password_hash(user["password"], secret)
-        assert db().execute("SELECT count(*) FROM products").fetchone()[0] == 2
+        assert (
+            db()
+            .execute("SELECT count(*) FROM products WHERE name LIKE 'TEST %'")
+            .fetchone()[0]
+            == 2
+        )
     result = run(["check"])
     assert result.returncode == 0, result.stderr
 

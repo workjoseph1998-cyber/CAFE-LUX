@@ -1,13 +1,33 @@
-{% macro cards(products,ar,tr,site) %}<div class="product-grid">{% for p in products %}<a class="product-card reveal" href="{{ url_for('public.product',pid=p.id) }}">
-<div class="product-photo">{% if p.image %}<img loading="lazy" src="{{ url_for('public.media',filename=p.image) }}" alt="{{ media_alt(p.image,p.name_ar if ar and p.name_ar else p.name) }}">{% else %}<img loading="lazy" src="{{ url_for('static',filename='images/'+p.kind+'.jpg') }}" alt="{{ tr('Coffee illustration') }}">{% endif %}<span class="card-arrow">→</span>
+{% macro cards(products,ar,tr,site) %}
+<div class="product-grid">
+{% for p in products %}
+<a class="product-card reveal" href="{{ url_for('public.product',pid=p.id) }}">
+  <div class="product-photo">
+    {% if p.image %}
+    <img loading="lazy" src="{{ url_for('public.media',filename=p.image) }}" alt="{{ media_alt(p.image,p.name_ar if ar and p.name_ar else p.name) }}">
+    {% else %}
+    <img loading="lazy" src="{{ url_for('static',filename='images/'+p.kind+'.jpg') }}" alt="{{ tr('Coffee illustration') }}">
+    {% endif %}
+    <span class="card-arrow" aria-hidden="true">→</span>
+  </div>
+  <div class="card-info">
+    <small>{{ (p.category_ar if ar and p.category_ar else p.category) or tr('Ground Coffee' if p.kind=='ground' else 'Drinks') }}</small>
+    <h3>{{ p.name_ar if ar and p.name_ar else p.name }}</h3>
+    <p class="card-description">{{ (p.description_ar if ar and p.description_ar else p.description)|truncate(95) }}</p>
+    <span class="card-price">
+    {% if p.starting_price is not none %}
+      {% if p.highest_price!=p.starting_price %}<small>{{ tr('From') }}</small>{% endif %}
+      {{ site.currency }} {{ p.starting_price|money }}
+    {% else %}{{ tr('Price to be configured') }}{% endif %}
+    </span>
+    <span class="card-details">{{ tr('View options') }} →</span>
+  </div>
+</a>
+{% else %}
+<div class="empty-collection">
+  <span class="eyebrow">CAFÉ LUX</span><h3>{{ tr('Menu coming soon') }}</h3>
+  <p>{{ tr('Our collection is being prepared.') }}</p>
 </div>
-<div class="card-info">
-<small>{{ tr('Ground Coffee' if p.kind=='ground' else 'Drinks') }}</small>
-<h3>{{ p.name_ar if ar and p.name_ar else p.name }}</h3>
-<span class="card-price">{% if p.starting_price is not none %}{{ tr('From') }} {{ site.currency }} {{ p.starting_price|money }}{% else %}{{ tr('Price pending') }}{% endif %}</span>
+{% endfor %}
 </div>
-</a>{% else %}<div class="empty-collection">
-<span class="eyebrow">CAFÉ LUX</span>
-<h3>{{ tr('Menu coming soon') }}</h3>
-<p>{{ tr('Our collection is being prepared.') }}</p>
-</div>{% endfor %}</div>{% endmacro %}
+{% endmacro %}

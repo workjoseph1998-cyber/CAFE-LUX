@@ -1,4 +1,4 @@
-# Café LUX — Premium Coffee 1.1 · Windows Fix
+# Café LUX — Premium Coffee 1.2 · Glass Menu
 
 A Flask / SQLite storefront with a black-and-gold editorial design, English and Arabic RTL, guest cash ordering, and an authenticated management studio at `/admin`.
 
@@ -6,7 +6,7 @@ This application belongs exclusively to **workjoseph1998-cyber/CAFE-LUX**. It do
 
 ## Windows quick start
 
-Extract the full v1.1 ZIP, open PowerShell in the application folder:
+Extract the full v1.2 ZIP, open PowerShell in the application folder:
 
 ```powershell
 .\setup.bat
@@ -17,6 +17,8 @@ Extract the full v1.1 ZIP, open PowerShell in the application folder:
 New Windows installs default to C:\CafeLuxData. Non-secret settings persist in the generated, ignored cafe-lux.local.json. Retain your existing Café LUX data path/config when upgrading.
 
 ## Start here
+
+- [Version 1.2 menu, pricing and safe upgrade](docs/VERSION-1.2.md)
 
 - [Windows Server 2022 installation, startup and rollback](docs/WINDOWS.md)
 - [First administrator](docs/ADMIN-INITIALIZATION.md)
@@ -31,7 +33,7 @@ New Windows installs default to C:\CafeLuxData. Non-secret settings persist in t
 - [Change log](CHANGELOG.md)
 - [Actual application screenshots](screenshots/)
 
-**No default administrator, published products, invented selling prices, address or phone number.** Ordering is disabled initially. Supply your business details, upload your artwork, create products with individually priced variants, then enable ordering. Draft example products are optional: `python -m flask --app cafe:create_app demo`. They are unpriced and unpublished.
+**No default administrator, invented selling prices, address or phone number.** The catalog includes 19 editable starter items in five categories with prices awaiting configuration. Ordering starts disabled on new installations. Starter items are imported once; later edits, archives and deletions survive restarts.
 
 ## Development (Python 3.12)
 
@@ -60,6 +62,6 @@ The screenshot script uses installed Chromium at `/usr/bin/chromium`, a temporar
 
 ## Release
 
-`python scripts/build_release.py` packages the tracked application, documentation, tests and screenshots as `dist/Cafe-LUX-Version-1.1-Windows-Fix.zip`, with a SHA-256 checksum alongside it. Runtime data, Git metadata, virtual environments and secrets are excluded. The ZIP is a source release, not a preinstalled Windows virtual environment.
+`python scripts/build_release.py` packages the tracked application, documentation, tests and screenshots as `dist/Cafe-LUX-Version-1.2-Glass-Menu.zip`, with a SHA-256 checksum alongside it. Runtime data, Git metadata, virtual environments and secrets are excluded. The ZIP is a source release, not a preinstalled Windows virtual environment.
 
 **No deployment is automatic.** Review the Windows guide and verify IIS HTTPS on your own server before enabling public orders.

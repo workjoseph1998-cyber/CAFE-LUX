@@ -79,6 +79,10 @@ def init_db():
         conn.execute("INSERT INTO schema_version VALUES (2)")
     for key, value in DEFAULTS.items():
         conn.execute("INSERT OR IGNORE INTO settings VALUES (?,?)", (key, value))
+    if not current_app.testing or current_app.config.get("SEED_STARTER_CATALOG", False):
+        from .starter_catalog import seed_catalog
+
+        seed_catalog(conn)
     conn.commit()
 
 

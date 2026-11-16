@@ -1,4 +1,4 @@
-{% extends 'base.html' %}{% from '_cards.html' import cards with context %}{% block content %}<section class="page-intro">
+{% extends 'base.html' %}{% from '_cards.html' import cards with context %}{% from '_categories.html' import categories_menu with context %}{% block content %}<section class="page-intro">
 <span class="eyebrow">CAFÉ LUX / {{ tr('Shop') }}</span>
 <h1>{{ tr('Drinks' if kind=='drink' else 'Ground Coffee' if kind=='ground' else 'Discover the collection') }}</h1>
 <p>{{ tr('Choose your ritual') }}</p>
@@ -9,6 +9,7 @@
 <a class="{{ 'selected' if kind=='drink' }}" href="{{ url_for('public.shop',kind='drink') }}">{{ tr('Drinks') }}</a>
 <a class="{{ 'selected' if kind=='ground' }}" href="{{ url_for('public.shop',kind='ground') }}">{{ tr('Ground Coffee') }}</a>
 </div>
+{{ categories_menu(menu_categories,ar,tr,kind) }}
 <form class="filters" method="get">
 <input type="hidden" name="kind" value="{{ kind or '' }}">
 <label>{{ tr('Search') }}<input name="q" value="{{ search }}" placeholder="{{ tr('Search') }}">

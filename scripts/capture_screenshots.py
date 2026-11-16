@@ -20,7 +20,12 @@ ROOT = Path(__file__).resolve().parents[1]
 def main():
     with tempfile.TemporaryDirectory(prefix="lux-browser-") as data:
         app = create_app(
-            {"TESTING": True, "DATA_DIR": data, "SESSION_COOKIE_SECURE": False}
+            {
+                "TESTING": True,
+                "DATA_DIR": data,
+                "SESSION_COOKIE_SECURE": False,
+                "SEED_STARTER_CATALOG": True,
+            }
         )
         password = secrets.token_urlsafe(24)
         with app.app_context():
@@ -35,56 +40,10 @@ def main():
             conn.execute(
                 "UPDATE settings SET value='1' WHERE key IN ('ordering','delivery')"
             )
-            for category, kind, names in [
-                (
-                    "Coffee drinks",
-                    "drink",
-                    ["Signature Latte", "Espresso", "Mocha", "Cold Brew"],
-                ),
-                (
-                    "Packaged coffee",
-                    "ground",
-                    ["House Blend", "Arabic Coffee", "Espresso Blend", "Single Origin"],
-                ),
-            ]:
-                cid = conn.execute(
-                    "INSERT INTO categories(name) VALUES (?)", (category,)
-                ).lastrowid
-                for name in names:
-                    pid = conn.execute(
-                        "INSERT INTO products(name,name_ar,description,description_ar,kind,category_id,active,featured,grinds,temperature) VALUES (?,?,?,?,?,?,1,1,?,?)",
-                        (
-                            "TEST " + name,
-                            "قهوة تجريبية",
-                            "Synthetic sample for testing only. Replace this copy before publishing.",
-                            "منتج تجريبي للاختبار فقط.",
-                            kind,
-                            cid,
-                            "Whole beans,Fine,Medium" if kind == "ground" else "",
-                            "both",
-                        ),
-                    ).lastrowid
-                    for label, grams, price in (
-                        [
-                            ("100 g", 100, 211),
-                            ("200 g", 200, 397),
-                            ("250 g", 250, 499),
-                            ("500 g", 500, 899),
-                            ("1 kg", 1000, 1501),
-                            ("375 g", 375, 701),
-                        ]
-                        if kind == "ground"
-                        else [("Regular", None, 375), ("Large", None, 610)]
-                    ):
-                        conn.execute(
-                            "INSERT INTO variants(product_id,label,label_ar,grams,price,stock) VALUES (?,?,?,?,?,25)",
-                            (pid, label, "حجم تجريبي", grams, price),
-                        )
-                    if kind == "drink":
-                        conn.execute(
-                            "INSERT INTO addons(product_id,name,price) VALUES (?,?,125)",
-                            (pid, "TEST extra shot"),
-                        )
+            conn.execute("UPDATE variants SET price=375,stock=25")
+            conn.execute(
+                "INSERT INTO addons(product_id,name,price) VALUES (1,'TEST extra shot',125)"
+            )
             conn.commit()
         server = make_server("127.0.0.1", 0, app, threaded=True)
         port = server.server_port

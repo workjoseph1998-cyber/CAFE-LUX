@@ -80,3 +80,14 @@ WORDS.update(
         "Illustrative image": "صورة توضيحية",
     }
 )
+
+WORDS.update(
+    {
+        "Coffee categories": "فئات القهوة",
+        "items": "منتجات",
+        "Find your favorite": "اكتشف مفضّلتك",
+        "View full menu": "عرض القائمة كاملة",
+        "View options": "عرض الخيارات",
+        "Price to be configured": "السعر قيد الإعداد",
+    }
+)
