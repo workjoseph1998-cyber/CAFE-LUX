@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.0 — Windows deployment reliability
+
+- Persist installation settings; default new Windows data to C:\CafeLuxData.
+- Discover supported Python; recover missing pip with ensurepip.
+- Numbered failures/nonzero exit codes, safe reruns and data preservation.
+- Script-relative quoted paths, UTF-8 and PID-verified JSON readiness.
+- Verify Windows venv launcher/interpreter ownership; serialize start/stop.
+- Operator manage.py commands and first-admin CLI audit fix.
+- Nested/space/Unicode installation tests and Windows Server 2022 CI matrix.
+- Preserve website and schema v2; v1.0 stays on its original branch.
+- Read-only comparison of supplied working ZIP; no Cirrus settings/data used.
+
 ## 1.0.0 — 2026-11-16
 
 - Black/gold responsive storefront, editorial homepage and reduced-motion-aware coffee animations.

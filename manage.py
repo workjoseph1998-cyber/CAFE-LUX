@@ -2,6 +2,8 @@
 
 import argparse
 import sys
+import os
+from pathlib import Path
 from deployment import (
     check_python,
     initialize_config,
@@ -54,6 +56,10 @@ def main():
                     ["localhost", "127.0.0.1", *args.host]
                 )
             if args.data_dir:
+                if (Path(settings["data_dir"]) / "server-process.json").exists():
+                    raise RuntimeError(
+                        "Stop Cafe LUX before changing its data directory. Resolve any stale process record first."
+                    )
                 protected = settings.get("protected_dirs", [])
                 settings["data_dir"] = str(
                     validate_data_path(args.data_dir, protected=protected)
@@ -71,6 +77,25 @@ def main():
             return 0
         load_environment()
         if args.command == "check":
+            data_value = os.environ.get("CAFE_LUX_DATA_DIR")
+            if not data_value:
+                raise RuntimeError("Missing storage configuration. Run setup.bat.")
+            data = validate_data_path(
+                data_value,
+                protected=[
+                    p
+                    for p in os.environ.get("CAFE_LUX_PROTECTED_DIRS", "").split(
+                        os.pathsep
+                    )
+                    if p
+                ],
+            )
+            if not all(
+                (data / name).is_file() for name in ("cafe.sqlite3", "session.key")
+            ):
+                raise RuntimeError(
+                    "Missing initialized database or session key. Run setup.bat with the correct data directory."
+                )
             from cafe import create_app
 
             app = create_app()
@@ -86,10 +111,21 @@ def main():
             from flask.cli import FlaskGroup
 
             cli = FlaskGroup(create_app=create_app)
-            cli.main(
-                args=[{"init-admin": "create-admin"}.get(args.command, args.command)],
-                standalone_mode=False,
-            )
+            from click import ClickException, Abort
+
+            try:
+                cli.main(
+                    args=[
+                        {"init-admin": "create-admin"}.get(args.command, args.command)
+                    ],
+                    standalone_mode=False,
+                )
+            except ClickException as exc:
+                exc.show()
+                return exc.exit_code
+            except Abort:
+                print("Administrator initialization cancelled.", file=sys.stderr)
+                return 1
         return 0
     except (RuntimeError, OSError, ImportError) as exc:
         print("Cafe LUX: " + str(exc), file=sys.stderr)

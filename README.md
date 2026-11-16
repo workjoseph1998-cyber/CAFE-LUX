@@ -1,12 +1,28 @@
-# Café LUX — Premium Coffee 1.0
+# Café LUX — Premium Coffee 1.1 · Windows Fix
 
 A Flask / SQLite storefront with a black-and-gold editorial design, English and Arabic RTL, guest cash ordering, and an authenticated management studio at `/admin`.
 
 This application belongs exclusively to **workjoseph1998-cyber/CAFE-LUX**. It does not access, import, configure, stop or deploy Cirrus Workplace or another repository.
 
+## Windows quick start
+
+Extract the full v1.1 ZIP, open PowerShell in the application folder:
+
+```powershell
+.\setup.bat
+.\.venv\Scripts\python.exe manage.py init-admin
+.\start.bat
+```
+
+New Windows installs default to C:\CafeLuxData. Non-secret settings persist in the generated, ignored cafe-lux.local.json. Retain your existing Café LUX data path/config when upgrading.
+
 ## Start here
 
 - [Windows Server 2022 installation, startup and rollback](docs/WINDOWS.md)
+- [First administrator](docs/ADMIN-INITIALIZATION.md)
+- [Troubleshooting](docs/TROUBLESHOOTING.md)
+- [Actual VM checklist](docs/VM-CHECKLIST.md)
+- [Windows fix investigation/tests](docs/WINDOWS-FIX-TESTS.md)
 - [Administrator guide](docs/ADMIN.md)
 - [Backup and restore](docs/BACKUPS.md)
 - [Architecture and security](docs/ARCHITECTURE.md)
@@ -44,6 +60,6 @@ The screenshot script uses installed Chromium at `/usr/bin/chromium`, a temporar
 
 ## Release
 
-`python scripts/build_release.py` packages the tracked application, documentation, tests and screenshots as `dist/Cafe-LUX-Version-1.0.zip`, with a SHA-256 checksum alongside it. Runtime data, Git metadata, virtual environments and secrets are excluded. The ZIP is a source release, not a preinstalled Windows virtual environment.
+`python scripts/build_release.py` packages the tracked application, documentation, tests and screenshots as `dist/Cafe-LUX-Version-1.1-Windows-Fix.zip`, with a SHA-256 checksum alongside it. Runtime data, Git metadata, virtual environments and secrets are excluded. The ZIP is a source release, not a preinstalled Windows virtual environment.
 
 **No deployment is automatic.** Review the Windows guide and verify IIS HTTPS on your own server before enabling public orders.

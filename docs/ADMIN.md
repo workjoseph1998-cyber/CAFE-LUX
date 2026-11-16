@@ -2,7 +2,7 @@
 
 ## First run
 
-1. Follow the Windows setup guide; run the interactive `create-admin` command. There is no public administrator registration or default password.
+1. Follow the Windows setup guide; run the interactive `python manage.py init-admin` command. There is no public administrator registration or default password.
 2. Sign in at `/admin` over HTTPS. Login sessions expire after one hour. Five failed attempts trigger a persistent 15-minute lockout per direct connection IP. See the IIS limitation in the Windows guide.
 3. Open **Website & settings**: configure brand, USD or another three-letter currency, English/Arabic hero text, About story, banner, footer, location, opening hours, contact and social links. Fields are blank or explicitly pending until supplied. No sourcing or history claims are prefilled.
 4. Upload your logo, original packaging artwork, product images, lifestyle and café photos in **Media library**, then select them in products or settings. The original chat packaging files were not available as downloadable workspace attachments; they are not bundled. A generated editorial hero is supplied as a replaceable default.
@@ -40,6 +40,6 @@ Overview shows orders today/month, pending count, completed revenue by currency,
 
 Set a retention period (default 365 days), then **Apply retention policy** to anonymize personal details in older completed/cancelled orders. This is a deliberate manual action; schedule operational review. Backup copies need their own expiry policy. For a targeted customer deletion request, use **Remove customer details** on the completed/cancelled order. Active orders must be closed first. Expire corresponding backup copies separately. Financial snapshots remain after anonymization.
 
-Administrators all have full management privileges. Create/reset/disable accounts in Administrators. Password resets and disable actions revoke existing sessions. You cannot disable your own account. Losing all admin access requires a trusted server operator to run `create-admin` with a new username; no unauthenticated recovery backdoor exists.
+Administrators all have full management privileges. Create/reset/disable accounts in Administrators. Password resets and disable actions revoke existing sessions. You cannot disable your own account. Losing all admin access requires a trusted server operator to run `python manage.py init-admin` with a new username; no unauthenticated recovery backdoor exists.
 
 Daily settings require no source edits. Operational deployment, secure storage permissions and restore commands remain trusted server-operator tasks.

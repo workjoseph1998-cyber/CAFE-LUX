@@ -1,72 +1,71 @@
-# Windows Server 2022 — installation and rollback
+# Cafe LUX 1.1 — Windows Server 2022
 
-## Isolation and prerequisites
+The website and schema v2 are unchanged. The original v1.0 remains on branch `feature/cafe-lux-v1`, commit `5720b71a867a0507e390ba4a5850e7ee635d9543`. The fix is on `fix/windows-setup-v1.1`. No IIS change or deployment is automatic.
 
-Install Python **3.12 x64** including the `py` launcher. Use a dedicated Windows service/operator identity. Extract the release to a new, versioned directory, for example `D:\CafeLUX\releases\1.0`. Use separate persistent storage such as `D:\CafeLUXData` containing the database, uploads, logs, backups and session key. Do not place it in the release folder, IIS web root, another application's directory or a shared data directory.
+## Run from an open PowerShell terminal
 
-The scripts never modify IIS or kill an existing application. Python rejects source-contained data, directories containing `Cirrus`, and any overlap with explicitly protected directories. Windows scripts perform the same checks. List every other application's real storage/app path in `CAFE_LUX_PROTECTED_DIRS` (semicolon-separated). Junctions should not be used for application/data directories. Python resolves actual filesystem paths before allowing storage.
-
-In PowerShell, replace the hostname and protected paths with your actual values:
+Extract the **complete** `Cafe-LUX-Version-1.1-Windows-Fix.zip` into the application folder, retaining the previous release for rollback. Your existing folder is supported:
 
 ```powershell
-$env:CAFE_LUX_DATA_DIR = 'D:\CafeLUXData'
-$env:CAFE_LUX_ALLOWED_HOSTS = 'your-real-domain.example,127.0.0.1'
-$env:CAFE_LUX_PROTECTED_DIRS = 'D:\ActualPreviousApplication;D:\ActualPreviousData'
-cd D:\CafeLUX\releases\1.0
+cd "C:\Users\Administrator\Desktop\CafeLUX\CAFE-LUX-feature-cafe-lux-v1\CAFE-LUX-feature-cafe-lux-v1"
 .\setup.bat
-.\.venv\Scripts\python.exe -m flask --app cafe:create_app create-admin
-```
-
-Enter the administrator username and a unique password (12+ characters) interactively; no default credentials exist. Do not paste passwords into scripts. Re-running setup preserves the database and applies additive schema migrations (v1 → v2). Use the same environment variables for every setup, backup, start and stop invocation; persist them for the dedicated operator account using Windows environment settings if desired.
-
-Restrict NTFS access on the data directory and release directory to the dedicated operator/service account and trusted administrators. Remove inherited access for unrelated users after reviewing the ACL with your Windows administrator. In particular protect `session.key`, backups and database files. The web server must not serve the data directory directly.
-
-## IIS contract (manual review only)
-
-Use your existing reverse proxy to `http://127.0.0.1:8000`. Leave its bindings and existing application installations intact. Confirm:
-
-- Public HTTPS certificate and binding are correct; redirect public HTTP to HTTPS in IIS.
-- Preserve the original Host header, and include that hostname in `CAFE_LUX_ALLOWED_HOSTS`.
-- IIS **overwrites**, rather than appends or trusts, `X-Forwarded-Proto` with the original connection scheme. `start.bat` enables trust of exactly one forwarded scheme indication.
-- Do not expose port 8000 externally. Waitress binds loopback only.
-- Forwarded client-IP headers are deliberately **not trusted**. The persistent login limiter uses the loopback proxy IP, so five failed logins can temporarily limit admin login for all users. It cannot be bypassed by submitting fake `X-Forwarded-For` headers.
-- Secure, HttpOnly, SameSite=Lax cookies use the distinct name `cafe_lux_session`.
-- IIS request size/time limits permit up to 8 MB uploads. The application also enforces its own size limit.
-
-No automatic ARR, URL Rewrite, firewall, certificate or IIS installation is attempted.
-
-## Start
-
-Stop your previous application yourself. Then, in the configured PowerShell session:
-
-```powershell
+.\.venv\Scripts\python.exe manage.py init-admin
 .\start.bat
 ```
 
-Startup refuses an occupied port, missing initialized data/session key, missing allowed host configuration or an existing process record. It records the exact new process identity and checks the homepage. If it fails, inspect `D:\CafeLUXData\logs\stderr.log` and `application.log`.
+If extracted elsewhere, use that folder instead. In CMD, use `cd /d "path"`, then `setup.bat`. Scripts use their own location, not the caller's working directory. Paths with spaces, Unicode and nested folders are supported; Windows MAX_PATH policies can still impose limits.
 
-Visit your real **HTTPS** hostname, sign in at `/admin`, configure business content and test a synthetic cash order before accepting public orders. No card payments are taken. A successful order page means stored, not accepted by staff; confirm in the orders dashboard.
+Install 64-bit CPython **3.12** if missing; 3.11 and 3.13 are accepted too. The scripts discover the Windows `py` launcher or PATH executables. No Python installation path is hardcoded. `CAFE_LUX_PYTHON` can optionally specify a known executable. Unsupported/broken Python produces a meaningful error before modifying data.
 
-For boot automation, create a Windows Scheduled Task under the dedicated identity with the same environment and working directory. Scheduling/service installation is a manual operator step; this release does not install a service or assume processes survive reboot.
+Setup prints six steps: virtual environment, saved configuration/storage, pip/dependencies, compatibility, schema initialization/migration, application/database verification. Missing pip is bootstrapped through Python's bundled `ensurepip`. Repeated setup preserves database, accounts, orders, uploads and session key. Failures return nonzero; keep the terminal open to see the exact output.
 
-## Stop safely
+## Data and persistent configuration
 
-1. Disable order acceptance in `/admin` → Website & settings.
-2. Drain public requests using your existing IIS maintenance procedure. Wait for active requests and admin writes/uploads to finish.
-3. Run `stop.bat` from the same release with the same data directory.
+New installations default to `C:\CafeLuxData`. No environment variable is required for a new Windows setup. It contains `cafe.sqlite3`, `session.key`, `uploads`, `logs` and `backups`. The generated, non-secret `cafe-lux.local.json` beside `manage.py` remembers storage, host validation, proxy and cookie settings across terminals. It is excluded from Git/ZIPs.
 
-The script checks PID, start timestamp, executable, application root and command line before stopping the recorded process. It never stops a process by port or name. On Windows, `Stop-Process` is a forced process exit, **not a graceful Waitress drain**; the manual drain is essential. SQLite transactions protect against partial orders. Back up before maintenance. If a record is stale and identity checks fail, inspect it and remove `server-process.json` manually only after verifying the recorded process is no longer this server.
+For a custom path **before first setup**:
 
-## Upgrade and rollback
+```powershell
+$env:CAFE_LUX_DATA_DIR = 'D:\CafeLuxData'
+.\setup.bat
+```
 
-1. Disable orders, drain requests, stop only Café LUX.
-2. Back up the database and media; retain the previous release and its dependencies.
-3. Extract the new release to a separate versioned directory. Use the same dedicated data directory, run setup, start, then verify HTTPS/login/products/order flow.
-4. If validation fails, stop the new release. Restore the matching pre-upgrade data backup using the old release's restore command, then start the old release.
-5. To return to your former non-Café-LUX application, stop Café LUX and start that application using its own existing procedure. Neither its files nor its database were changed.
+For an existing installation, retain its original Café LUX data directory. Copy its local JSON when using a new release folder, or supply the existing data path before setup. A saved path conflicting with a shell variable causes setup to refuse a silent database switch. Process variables take precedence at runtime; clear stale overrides.
 
-Do not run two applications on port 8000. Do not copy one application's database or session key over another application's storage. No automatic deployment or rollback is performed.
+To deliberately select another path while stopped: `python manage.py configure --data-dir "absolute path"`. This does not move/overwrite data. Back up and migrate files separately if changing storage. No `CIRRUS_*` variables are used.
 
-## Validation boundary
+Optional `CAFE_LUX_PROTECTED_DIRS` lists other apps' real source/data directories, semicolon-separated. Setup refuses overlap with source/protected paths or paths containing Cirrus; Python resolves actual paths/junctions. Restrict NTFS access to the dedicated operator/service identity and trusted administrators. Keep runtime data/backups outside the IIS web root and SQLite on local disk.
 
-Linux cloud checks validate application behavior and the Python port conflict guard. PowerShell execution, Windows process identity inspection, NTFS ACLs, reboot behavior and your actual IIS headers/TLS must be validated on Windows before production. No Windows execution or IIS deployment is claimed by this release.
+## Administrator initialization
+
+`.\.venv\Scripts\python.exe manage.py init-admin` prompts for a new username and a unique password of 12+ characters twice. There is no default password. Existing usernames are not overwritten. See [ADMIN-INITIALIZATION.md](ADMIN-INITIALIZATION.md). V1.1 fixes the original CLI audit logging bug that incorrectly required a web session.
+
+## Existing IIS proxy and cookies
+
+`start.bat` binds Waitress exclusively to `127.0.0.1:8000`, refuses occupied ports/duplicate records, and checks `/healthz` JSON against the owned serving PID. It never frees a port by killing another process.
+
+Browse `http://127.0.0.1:8000` on the VM. For production admin/cart/checkout, use your existing **HTTPS IIS URL** because default cookies are Secure.
+
+If IIS preserves the public Host header and you see **Invalid host**, configure the actual hostname/IP in the app (no scheme, port or path):
+
+```powershell
+.\stop.bat
+.\.venv\Scripts\python.exe manage.py configure --host your-actual-hostname.example
+.\start.bat
+```
+
+Repeat `--host` for multiple public names; loopback hosts remain allowed. This is application configuration; no IIS rewrite/binding change is normally needed. No IP/address from another app is silently copied.
+
+The saved default trusts one forwarded scheme indication. IIS must overwrite `X-Forwarded-Proto` with the original scheme. Forwarded Host/client-IP claims are not trusted. No IIS edit is needed if the existing proxy already supplies the correct scheme.
+
+For isolated **local HTTP testing only**, stop and run `manage.py configure --local-http`, then start. This disables Secure cookies for the installation; restore `--secure-cookies` before public use. An HTTP-only IIS URL is a real security compatibility decision: production sessions require HTTPS.
+
+## Stop and rollback
+
+Disable orders and drain active requests through your normal IIS maintenance procedure before `stop.bat`. The script verifies root, executable, command line, PID and creation timestamp for the venv launcher and serving interpreter child. Concurrent start/stop commands are locked. PID reuse/unknown ownership fails closed; no other Python process or IIS is stopped.
+
+Windows process termination is not a graceful request drain, so drain first. A background process is not an installed Windows service. Boot scheduling/service installation remains a manual operator task.
+
+For rollback, stop Café LUX, retain current data and back up database/media. Restore the previous source and its configuration (or supply its old data path for v1.0), then start only one app on 8000. Schema v2 is unchanged. Restore older business data only intentionally using [BACKUPS.md](BACKUPS.md). Other applications' files/data were never modified.
+
+Follow [VM-CHECKLIST.md](VM-CHECKLIST.md) on your actual VM. CI/cloud results do not prove your IIS headers, certificate, permissions or installed Python work.

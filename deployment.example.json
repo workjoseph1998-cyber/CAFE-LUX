@@ -1,0 +1,7 @@
+{
+  "data_dir": "C:\\CafeLuxData",
+  "allowed_hosts": ["localhost", "127.0.0.1"],
+  "trust_proxy": true,
+  "insecure_local": false,
+  "protected_dirs": []
+}

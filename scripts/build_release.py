@@ -13,7 +13,8 @@ if not any(files):
     raise SystemExit("Stage the release source before packaging.")
 out = root / "dist"
 out.mkdir(exist_ok=True)
-archive = out / "Cafe-LUX-Version-1.0.zip"
+release_name = "Cafe-LUX-Version-1.1-Windows-Fix"
+archive = out / (release_name + ".zip")
 with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as z:
     for name in files:
         if not name:
@@ -24,10 +25,19 @@ with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as z:
             or ".." in path.parts
             or path.parts[0] in (".git", ".venv", "data", "dist")
             or path.suffix in (".sqlite3", ".db", ".log", ".key")
-            or path.name == ".env"
+            or path.name in (".env", "cafe-lux.local.json", "cafe-lux.local.json.tmp")
         ):
             raise SystemExit("Unsafe tracked release file: " + name)
-        z.write(root / path, arcname="Cafe-LUX-Version-1.0/" + name)
+        if path.suffix.lower() == ".bat":
+            content = (
+                (root / path)
+                .read_bytes()
+                .replace(b"\r\n", b"\n")
+                .replace(b"\n", b"\r\n")
+            )
+            z.writestr(release_name + "/" + name, content)
+        else:
+            z.write(root / path, arcname=release_name + "/" + name)
 checksum = hashlib.sha256(archive.read_bytes()).hexdigest()
 (out / (archive.name + ".sha256")).write_text(checksum + "  " + archive.name + "\n")
 print(archive)

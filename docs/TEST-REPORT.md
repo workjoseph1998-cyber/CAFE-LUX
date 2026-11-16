@@ -1,3 +1,5 @@
+> Version 1.0 historical report. For the deployment fix and current test evidence, see [WINDOWS-FIX-TESTS.md](WINDOWS-FIX-TESTS.md).
+
 # Version 1.0 validation report
 
 Validated in the Linux cloud development environment on 2026-11-16 using Python 3.12, Flask 3.1, SQLite and Chromium. These are functional and regression checks, not penetration-test certification.
