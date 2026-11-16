@@ -74,3 +74,19 @@ if (!reduce && "IntersectionObserver" in window) {
     observer.observe(e);
   });
 }
+
+// Size/weight selection previews catalog prices; no order or cart request is made.
+document.querySelectorAll(".menu-options").forEach((card) => {
+  const select = card.querySelector(".menu-variant");
+  const output = card.querySelector("output");
+  if (!select) return;
+  const update = () => {
+    const price = select.selectedOptions[0].dataset.price;
+    output.textContent =
+      price === ""
+        ? output.dataset.pending
+        : output.dataset.currency + " " + (Number(price) / 100).toFixed(2);
+  };
+  select.addEventListener("change", update);
+  update();
+});

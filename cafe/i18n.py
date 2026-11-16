@@ -91,3 +91,37 @@ WORDS.update(
         "Price to be configured": "السعر قيد الإعداد",
     }
 )
+
+WORDS.update(
+    {
+        "What would you like?": "ماذا ترغب اليوم؟",
+        "Choose your coffee, select a size, and add it to your bag.": "اختر قهوتك والحجم المناسب وأضفها إلى حقيبتك.",
+        "Made to order": "تُحضّر عند الطلب",
+        "Bags to brew at home": "أكياس لتحضير القهوة في المنزل",
+        "All drinks": "جميع المشروبات",
+        "All coffee": "جميع أنواع القهوة",
+        "Search the menu": "ابحث في القائمة",
+        "Clear filters": "مسح الفلاتر",
+        "Coming soon": "قريباً",
+        "Customize": "تخصيص الطلب",
+        "Product details": "تفاصيل المنتج",
+        "No matches": "لا توجد نتائج",
+        "Try another search or category.": "جرّب بحثاً أو فئة أخرى.",
+    }
+)
+
+WORDS.update(
+    {
+        "Discover your next favorite.": "اكتشف قهوتك المفضّلة.",
+        "Explore our drinks and coffee. Choose a category, compare sizes, and find your favorite.": "اكتشف مشروباتنا وقهوتنا. اختر الفئة وقارن الأحجام لتجد مفضّلتك.",
+        "Explore menu": "اكتشف القائمة",
+        "Explore our coffee": "اكتشف قهوتنا",
+        "Hot & iced favorites": "مفضّلات ساخنة ومثلّجة",
+        "Price coming soon": "السعر قريباً",
+        "Discover this coffee": "اكتشف هذه القهوة",
+        "Sizes & prices": "الأحجام والأسعار",
+        "Back to menu": "العودة إلى القائمة",
+        "This website is for exploring our menu. No online orders or payments are collected.": "هذا الموقع لاستكشاف قائمتنا. لا نجمع طلبات أو مدفوعات عبر الإنترنت.",
+        "Menu details and availability may change. Please contact the café for current information.": "قد تتغيّر تفاصيل القائمة والتوفر. يرجى التواصل مع المقهى للمعلومات الحالية.",
+    }
+)

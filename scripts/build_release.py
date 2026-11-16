@@ -13,7 +13,7 @@ if not any(files):
     raise SystemExit("Stage the release source before packaging.")
 out = root / "dist"
 out.mkdir(exist_ok=True)
-release_name = "Cafe-LUX-Version-1.2-Glass-Menu"
+release_name = "Cafe-LUX-Version-1.3-Explore"
 archive = out / (release_name + ".zip")
 with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as z:
     for name in files:

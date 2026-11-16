@@ -1,21 +1,36 @@
-{% extends 'base.html' %}{% from '_cards.html' import cards with context %}{% from '_categories.html' import categories_menu with context %}{% block content %}<section class="page-intro">
-<span class="eyebrow">CAFÉ LUX / {{ tr('Shop') }}</span>
-<h1>{{ tr('Drinks' if kind=='drink' else 'Ground Coffee' if kind=='ground' else 'Discover the collection') }}</h1>
-<p>{{ tr('Choose your ritual') }}</p>
+{% extends 'base.html' %}
+{% from '_cards.html' import cards with context %}
+{% block content %}
+<section class="menu-intro">
+  <div><span class="eyebrow">CAFÉ LUX</span><h1>{{ tr('Discover your next favorite.') }}</h1><p>{{ tr('Explore our drinks and coffee. Choose a category, compare sizes, and find your favorite.') }}</p></div>
+  <a class="button outline" href="{{ url_for('public.page',name='location') }}">{{ tr('Visit our café') }} →</a>
 </section>
-<section class="section catalog">
-<div class="tabs">
-<a class="{{ 'selected' if not kind }}" href="{{ url_for('public.shop') }}">{{ tr('Shop') }}</a>
-<a class="{{ 'selected' if kind=='drink' }}" href="{{ url_for('public.shop',kind='drink') }}">{{ tr('Drinks') }}</a>
-<a class="{{ 'selected' if kind=='ground' }}" href="{{ url_for('public.shop',kind='ground') }}">{{ tr('Ground Coffee') }}</a>
-</div>
-{{ categories_menu(menu_categories,ar,tr,kind) }}
-<form class="filters" method="get">
-<input type="hidden" name="kind" value="{{ kind or '' }}">
-<label>{{ tr('Search') }}<input name="q" value="{{ search }}" placeholder="{{ tr('Search') }}">
-</label>
-<label>{{ tr('All categories') }}<select name="category">
-<option value="">{{ tr('All categories') }}</option>{% for c in categories %}<option value="{{ c.id }}" {{ 'selected' if request.args.get('category')==c.id|string }}>{{ c.name_ar if ar and c.name_ar else c.name }}</option>{% endfor %}</select>
-</label>
-<button class="button outline">{{ tr('Search') }}</button>
-</form>{{ cards(products,ar,tr,site) }}</section>{% endblock %}
+<section class="menu-workspace">
+  <nav class="order-modes" aria-label="{{ tr('Shop') }}">
+    <a class="{{ 'selected' if kind=='drink' }}" aria-current="{{ 'page' if kind=='drink' else 'false' }}" href="{{ url_for('public.shop',kind='drink') }}"><strong>{{ tr('Drinks') }}</strong><span>{{ tr('Hot & iced favorites') }}</span></a>
+    <a class="{{ 'selected' if kind=='ground' }}" aria-current="{{ 'page' if kind=='ground' else 'false' }}" href="{{ url_for('public.shop',kind='ground') }}"><strong>{{ tr('Ground Coffee') }}</strong><span>{{ tr('Bags to brew at home') }}</span></a>
+  </nav>
+  <div class="menu-controls">
+    <nav class="category-chips" aria-label="{{ tr('Coffee categories') }}">
+      <a class="{{ 'selected' if not selected_category }}" href="{{ url_for('public.shop',kind=kind) }}" aria-current="{{ 'page' if not selected_category else 'false' }}">{{ tr('All drinks' if kind=='drink' else 'All coffee') }}</a>
+      {% for c in menu_categories %}
+      <a class="{{ 'selected' if selected_category==c.id }}" href="{{ url_for('public.shop',kind=kind,category=c.id) }}" aria-current="{{ 'page' if selected_category==c.id else 'false' }}">{{ c.name_ar if ar and c.name_ar else c.name }}</a>
+      {% endfor %}
+    </nav>
+    <form class="menu-search" method="get" role="search">
+      <input type="hidden" name="kind" value="{{ kind }}">
+      {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
+      <label class="visually-hidden" for="menu-search">{{ tr('Search') }}</label>
+      <input id="menu-search" name="q" value="{{ search }}" placeholder="{{ tr('Search the menu') }}" type="search">
+      <button class="button" type="submit">{{ tr('Search') }}</button>
+    </form>
+  </div>
+  <p class="results-count" role="status">{{ product_count }} {{ tr('items') }}{% if search %} · “{{ search }}” · <a href="{{ url_for('public.shop',kind=kind) }}">{{ tr('Clear filters') }}</a>{% endif %}</p>
+  {% for group in groups %}
+  <section class="menu-group"><div class="menu-group-heading"><h2>{{ group.title_ar if ar and group.title_ar else group.title }}</h2><span>{{ group.products|length }} {{ tr('items') }}</span></div>
+  {{ cards(group.products,ar,tr,site) }}</section>
+  {% else %}
+  <div class="empty-collection"><h2>{{ tr('No matches') }}</h2><p>{{ tr('Try another search or category.') }}</p><a class="button gold" href="{{ url_for('public.shop',kind=kind) }}">{{ tr('Clear filters') }}</a></div>
+  {% endfor %}
+</section>
+{% endblock %}

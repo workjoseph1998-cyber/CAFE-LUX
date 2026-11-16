@@ -1,7 +1,7 @@
 name: Windows deployment regression
 on:
   push:
-    branches: [fix/windows-setup-v1.1, feature/cafe-lux-v1.2-glass-menu]
+    branches: [fix/windows-setup-v1.1, feature/cafe-lux-v1.2-glass-menu, feature/cafe-lux-v1.3-explore]
   pull_request:
   workflow_dispatch:
 concurrency:

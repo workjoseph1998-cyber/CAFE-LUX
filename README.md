@@ -1,67 +1,31 @@
-# Café LUX — Premium Coffee 1.2 · Glass Menu
+# Café LUX — Premium Coffee 1.3 · Explore
 
-A Flask / SQLite storefront with a black-and-gold editorial design, English and Arabic RTL, guest cash ordering, and an authenticated management studio at `/admin`.
+A Flask/SQLite coffee-shop menu and brand discovery website with English/Arabic RTL, a clear warm menu design and the Café LUX black-and-gold identity.
 
-This application belongs exclusively to **workjoseph1998-cyber/CAFE-LUX**. It does not access, import, configure, stop or deploy Cirrus Workplace or another repository.
-
-## Windows quick start
-
-Extract the full v1.2 ZIP, open PowerShell in the application folder:
-
-```powershell
-.\setup.bat
-.\.venv\Scripts\python.exe manage.py init-admin
-.\start.bat
-```
-
-New Windows installs default to C:\CafeLuxData. Non-secret settings persist in the generated, ignored cafe-lux.local.json. Retain your existing Café LUX data path/config when upgrading.
+**This version has no public ordering process:** no cart, checkout, purchase buttons or order submissions. Visitors browse drinks and packaged coffee, select sizes/weights to compare prices, explore product details and find the café.
 
 ## Start here
 
-- [Version 1.2 menu, pricing and safe upgrade](docs/VERSION-1.2.md)
-
-- [Windows Server 2022 installation, startup and rollback](docs/WINDOWS.md)
-- [First administrator](docs/ADMIN-INITIALIZATION.md)
-- [Troubleshooting](docs/TROUBLESHOOTING.md)
-- [Actual VM checklist](docs/VM-CHECKLIST.md)
-- [Windows fix investigation/tests](docs/WINDOWS-FIX-TESTS.md)
+- [Version 1.3 features, verification and safe upgrade](docs/VERSION-1.3.md)
+- [Windows Server 2022 setup/start/stop](docs/WINDOWS.md)
 - [Administrator guide](docs/ADMIN.md)
-- [Backup and restore](docs/BACKUPS.md)
-- [Architecture and security](docs/ARCHITECTURE.md)
-- [Test results and limitations](docs/TEST-REPORT.md)
-- [Visual assets](docs/ASSETS.md)
-- [Change log](CHANGELOG.md)
-- [Actual application screenshots](screenshots/)
+- [First admin creation](docs/ADMIN-INITIALIZATION.md)
+- [Troubleshooting](docs/TROUBLESHOOTING.md)
+- [Backup/restore](docs/BACKUPS.md)
+- [Screenshots](screenshots/)
 
-**No default administrator, invented selling prices, address or phone number.** The catalog includes 19 editable starter items in five categories with prices awaiting configuration. Ordering starts disabled on new installations. Starter items are imported once; later edits, archives and deletions survive restarts.
+For a new Windows installation, open PowerShell in the extracted app folder and run setup.bat, then .\.venv\Scripts\python.exe manage.py init-admin, then start.bat. New data defaults to C:\CafeLuxData. For upgrades, stop the previous app from its original folder and retain its cafe-lux.local.json/data; do not create a replacement admin.
 
-## Development (Python 3.12)
+The 19-item starter catalog and five categories remain editable. Actual prices are not invented. Unconfigured items display “Price coming soon”; configure each size/weight through Admin → Products → Edit.
 
-Use the existing checkout; cloud tasks are already isolated. No Git worktree is necessary.
+## Development
 
-```bash
-python3 -m venv /workspace/cafe-lux-venv
-/workspace/cafe-lux-venv/bin/python -m pip install -r requirements-dev.txt
-export CAFE_LUX_DATA_DIR=/workspace/cafe-lux-data
-export CAFE_LUX_INSECURE_LOCAL=1 # HTTP localhost development ONLY
-/workspace/cafe-lux-venv/bin/python -m flask --app cafe:create_app init-db
-/workspace/cafe-lux-venv/bin/python -m flask --app cafe:create_app create-admin
-/workspace/cafe-lux-venv/bin/python run.py
-```
+Python 3.12 is recommended. Use the existing isolated cloud checkout; no worktree is needed. Set CAFE_LUX_DATA_DIR to a dedicated absolute directory outside source, create a venv, install requirements-dev.txt and run python run.py. For local HTTP session testing only, CAFE_LUX_INSECURE_LOCAL=1 disables Secure cookies; production should use HTTPS through IIS. Bind remains 127.0.0.1:8000.
 
-The listener is always `127.0.0.1:8000`. Use HTTPS in production. `CAFE_LUX_INSECURE_LOCAL=1` disables Secure cookies for local HTTP; Windows startup explicitly removes it. Set `CAFE_LUX_ALLOWED_HOSTS` to comma-separated public hostnames plus `127.0.0.1` in production. No schemes or ports. Default: `localhost,127.0.0.1`.
-
-## Validate
-
-```bash
-/workspace/cafe-lux-venv/bin/python -m pytest -q
-/workspace/cafe-lux-venv/bin/python scripts/capture_screenshots.py
-```
-
-The screenshot script uses installed Chromium at `/usr/bin/chromium`, a temporary database and a random temporary admin password. All example prices and customer details are explicitly **synthetic test fixtures**, never real offers. The script checks mobile layouts, checkout and admin flows before taking screenshots. No runtime database, customer data or credentials belong in the release.
+Run python -m pytest -q for backend checks. Run python scripts/capture_screenshots.py for actual explore-mode Chromium acceptance (installed Chromium at /usr/bin/chromium). It uses disposable fixtures and no real customer data. Production ordering endpoints remain blocked regardless of older order settings.
 
 ## Release
 
-`python scripts/build_release.py` packages the tracked application, documentation, tests and screenshots as `dist/Cafe-LUX-Version-1.2-Glass-Menu.zip`, with a SHA-256 checksum alongside it. Runtime data, Git metadata, virtual environments and secrets are excluded. The ZIP is a source release, not a preinstalled Windows virtual environment.
+python scripts/build_release.py creates dist/Cafe-LUX-Version-1.3-Explore.zip plus SHA-256. The complete source ZIP includes application, assets, Windows scripts, tests, docs and screenshots. It excludes keys, databases, runtime media, logs, local deployment configuration and virtual environments.
 
-**No deployment is automatic.** Review the Windows guide and verify IIS HTTPS on your own server before enabling public orders.
+No deployment or IIS modification is automatic. The app belongs only to workjoseph1998-cyber/CAFE-LUX; other repositories and Cirrus data are not modified.

@@ -66,6 +66,7 @@ def create_app(test_config=None):
         DATA_DIR=str(data),
         DATABASE=str(data / "cafe.sqlite3"),
         MAX_CONTENT_LENGTH=8 * 1024 * 1024,
+        PUBLIC_ORDERING_ENABLED=False,
         SESSION_COOKIE_NAME="cafe_lux_session",
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
@@ -86,6 +87,16 @@ def create_app(test_config=None):
     app.teardown_appcontext(close_db)
     with app.app_context():
         init_db()
+
+    @app.before_request
+    def explore_only():
+        if not app.config["PUBLIC_ORDERING_ENABLED"] and request.endpoint in {
+            "public.add",
+            "public.cart",
+            "public.checkout",
+            "public.confirmation",
+        }:
+            abort(404)
 
     @app.before_request
     def csrf():
@@ -122,7 +133,23 @@ def create_app(test_config=None):
             )
             return row["alt"] if row and row["alt"] else fallback
 
+        def illustration(product):
+            if product["kind"] == "ground":
+                return "ground"
+            name = product["name"].lower()
+            if product["temperature"] == "cold":
+                return "iced"
+            if "chocolate" in name:
+                return "chocolate"
+            if "turkish" in name or "arabic" in name:
+                return "turkish"
+            if "espresso" in name or "americano" in name:
+                return "espresso"
+            return "drink"
+
         return dict(
+            illustration=illustration,
+            public_ordering=app.config["PUBLIC_ORDERING_ENABLED"],
             media_alt=media_alt,
             site=settings(),
             ar=ar,

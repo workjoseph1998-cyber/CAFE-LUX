@@ -53,7 +53,16 @@ def catalog(kind=None):
     if kind:
         sql += " AND p.kind=?"
         args.append(kind)
-    return db().execute(sql + " ORDER BY p.position,p.id", args).fetchall()
+    rows = db().execute(sql + " ORDER BY p.position,p.id", args).fetchall()
+    options = {}
+    for v in db().execute("SELECT * FROM variants WHERE active=1 ORDER BY id"):
+        options.setdefault(v["product_id"], []).append(dict(v))
+    result = []
+    for row in rows:
+        item = dict(row)
+        item["display_variants"] = options.get(row["id"], [])
+        result.append(item)
+    return result
 
 
 def priced_cart():
@@ -121,7 +130,7 @@ def home():
 
 @bp.get("/shop")
 def shop():
-    kind = request.args.get("kind") or None
+    kind = request.args.get("kind") or "drink"
     if kind not in ("drink", "ground", None):
         abort(404)
     products = catalog(kind)
@@ -135,8 +144,24 @@ def shop():
             for p in products
             if search.lower() in (p["name"] + " " + p["name_ar"]).lower()
         ]
+    categories = menu_categories(kind)
+    groups = []
+    for c in categories:
+        group_products = [p for p in products if p["category_id"] == c["id"]]
+        if group_products:
+            groups.append(
+                dict(title=c["name"], title_ar=c["name_ar"], products=group_products)
+            )
+    uncategorized = [p for p in products if p["category_id"] is None]
+    if uncategorized:
+        groups.append(
+            dict(title="More choices", title_ar="خيارات أخرى", products=uncategorized)
+        )
     return render_template(
         "shop.html",
+        groups=groups,
+        selected_category=category,
+        product_count=len(products),
         products=products,
         kind=kind,
         categories=db()

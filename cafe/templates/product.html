@@ -1,12 +1,12 @@
 {% extends 'base.html' %}{% from '_cards.html' import cards with context %}{% block title %}{{ p.name }} · {{ site.brand }}{% endblock %}{% block content %}<section class="section product-detail">
 <div>
-<div class="detail-image">{% if p.image %}<img id="main-product-image" src="{{ url_for('public.media',filename=p.image) }}" alt="{{ p.name }}">{% else %}<img id="main-product-image" src="{{ url_for('static',filename='images/'+p.kind+'.jpg') }}" alt="{{ tr('Coffee illustration') }}">{% endif %}</div>{% if gallery %}<div class="gallery">{% for image in ([p.image] if p.image else [])+gallery %}<button class="gallery-thumb" data-src="{{ url_for('public.media',filename=image) }}" aria-label="View image {{ loop.index }}">
+<div class="detail-image">{% if p.image %}<img id="main-product-image" src="{{ url_for('public.media',filename=p.image) }}" alt="{{ p.name }}">{% else %}<img id="main-product-image" src="{{ url_for('static',filename='images/'+illustration(p)+'.jpg') }}" alt="{{ tr('Coffee illustration') }}">{% endif %}</div>{% if gallery %}<div class="gallery">{% for image in ([p.image] if p.image else [])+gallery %}<button class="gallery-thumb" data-src="{{ url_for('public.media',filename=image) }}" aria-label="View image {{ loop.index }}">
 <img src="{{ url_for('public.media',filename=image) }}" alt="{{ p.name }} {{ loop.index }}">
 </button>{% endfor %}</div>{% endif %}</div>
 <div class="detail-copy">{% if not p.image %}<small class="image-note">{{ tr('Illustrative image') }}</small>{% endif %}<span class="eyebrow">CAFÉ LUX / {{ tr('Ground Coffee' if p.kind=='ground' else 'Drinks') }}</span>
 <h1>{{ p.name_ar if ar and p.name_ar else p.name }}</h1>
 <p>{{ p.description_ar if ar and p.description_ar else p.description }}</p>
-<form method="post" action="{{ url_for('public.add') }}" id="product-form">
+{% if public_ordering %}<form method="post" action="{{ url_for('public.add') }}" id="product-form">
 <input type="hidden" name="csrf" value="{{ csrf_token }}">
 <label>{{ tr('Size / weight') }}<select name="variant" id="variant" required>
 <option value="" data-price="">{{ tr('Choose your ritual') }}</option>{% for v in variants %}<option value="{{ v.id }}" data-price="{{ v.price if v.price is not none else '' }}" {{ 'disabled' if v.price is none or v.stock==0 }}>{{ v.label_ar if ar and v.label_ar else v.label }} · {% if v.price is not none %}{{ site.currency }} {{ v.price|money }}{% else %}{{ tr('Price pending') }}{% endif %}{{ ' · '+tr('Unavailable') if v.stock==0 }}</option>{% endfor %}</select>
@@ -21,7 +21,16 @@
 <output id="product-total" data-currency="{{ site.currency }}">{{ tr('Choose your ritual') }}</output>
 <button class="button gold">{{ tr('Add to bag') }} →</button>
 </div>
-</form>
+</form>{% else %}<div class="detail-explore">
+<span class="eyebrow">{{ tr('Sizes & prices') }}</span>
+<div class="size-price-list">{% for v in variants %}
+<div><span>{{ v.label_ar if ar and v.label_ar else v.label }}</span><strong>{% if v.price is not none %}{{ site.currency }} {{ v.price|money }}{% else %}{{ tr('Price coming soon') }}{% endif %}</strong></div>
+{% endfor %}</div>
+{% if p.grinds %}<p>{{ tr('Grind') }}: {{ p.grinds }}</p>{% endif %}
+{% if addons %}<h3>{{ tr('Add-ons') }}</h3>{% for a in addons %}<div class="explore-addon"><span>{{ a.name_ar if ar and a.name_ar else a.name }}</span><strong>{{ site.currency }} {{ a.price|money }}</strong></div>{% endfor %}{% endif %}
+<a class="button gold" href="{{ url_for('public.page',name='location') }}">{{ tr('Visit our café') }} →</a>
+<a class="underlink" href="{{ url_for('public.shop',kind=p.kind) }}">{{ tr('Back to menu') }}</a>
+</div>{% endif %}
 <dl class="attributes">{% for key,label in [('roast','Roast'),('origin','Origin'),('bean','Bean'),('notes','Flavor notes'),('preparation','Preparation')] %}{% if p[key] %}<dt>{{ tr(label) }}</dt>
 <dd>{{ p[key] }}</dd>{% endif %}{% endfor %}</dl>
 </div>

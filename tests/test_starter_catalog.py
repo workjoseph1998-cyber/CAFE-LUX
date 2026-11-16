@@ -1,7 +1,6 @@
 from cafe import create_app
 from cafe.db import db
 from cafe.starter_catalog import CATALOG
-from conftest import add
 
 
 def seeded_app(path):
@@ -44,10 +43,9 @@ def test_new_install_has_editable_unpriced_menu(tmp_path):
         assert [w[0] for w in weights] == [100, 200, 250, 500, 1000]
     client = app.test_client()
     html = client.get("/shop").text
-    assert (
-        "Espresso Classics" in html and "Iced Latte" in html and "House Blend" in html
-    )
-    assert html.count("Price to be configured") == 19
+    assert "Espresso Classics" in html and "Iced Latte" in html
+    assert html.count(">Price coming soon</output>") == 15
+    assert "House Blend" in client.get("/shop?kind=ground").text
     assert "category-menu" in client.get("/").text
 
 
@@ -115,11 +113,11 @@ def test_card_prices_come_from_saved_variants(client, app):
     with app.app_context():
         db().execute("UPDATE variants SET price=610 WHERE id=2")
         db().commit()
-    assert "<small>From</small>" in client.get("/shop?kind=drink").text
+    assert "6.10" in client.get("/shop?kind=drink").text
 
 
 def test_unpriced_starter_cannot_be_purchased(tmp_path):
     app = seeded_app(tmp_path / "data")
     client = app.test_client()
-    add(client)
-    assert "Your bag is empty." in client.get("/cart").text
+    assert client.get("/cart").status_code == 404
+    assert client.post("/cart/add").status_code == 404

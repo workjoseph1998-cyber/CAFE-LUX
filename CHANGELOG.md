@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.0 — Explore-only menu
+
+- Remove public cart, checkout, ordering buttons and order submission access.
+- Separate Drinks/Ground Coffee with clear categories, search and grouped menu sections.
+- Warm light menu surfaces, larger readable type/prices and per-size/weight price previews.
+- Add distinct generated espresso, iced, Turkish and hot-chocolate illustrations.
+- Preserve admin/catalog management, existing accounts/data, Windows fixes and brand animations.
+- Update explore-mode screenshots and tests; previous versions remain on their branches.
+
 ## 1.2.0 — Glass Menu
 
 - Add 19 coffee-shop items in five bilingual categories once per installation.

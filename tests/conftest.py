@@ -13,6 +13,7 @@ def app(tmp_path):
     app = create_app(
         {
             "TESTING": True,
+            "PUBLIC_ORDERING_ENABLED": True,
             "DATA_DIR": str(tmp_path / "data"),
             "SESSION_COOKIE_SECURE": False,
         }
