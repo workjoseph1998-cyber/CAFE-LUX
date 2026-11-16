@@ -15,6 +15,10 @@ from .db import init_db, close_db, settings
 
 
 def create_app(test_config=None):
+    if not test_config:
+        from deployment import load_environment
+
+        load_environment()
     app = Flask(__name__)
     configured_data = (test_config or {}).get("DATA_DIR") or os.environ.get(
         "CAFE_LUX_DATA_DIR"

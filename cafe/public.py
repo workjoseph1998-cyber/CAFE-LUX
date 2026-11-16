@@ -1,5 +1,6 @@
 import json
 import secrets
+import os
 from decimal import Decimal, InvalidOperation
 from flask import (
     Blueprint,
@@ -415,3 +416,9 @@ def media(filename):
     if not db().execute("SELECT 1 FROM media WHERE filename=?", (filename,)).fetchone():
         abort(404)
     return send_from_directory(current_app.config["DATA_DIR"] + "/uploads", filename)
+
+
+@bp.get("/healthz")
+def health():
+    db().execute("SELECT key FROM settings LIMIT 1").fetchone()
+    return {"application": "cafe-lux", "status": "ok", "pid": os.getpid()}

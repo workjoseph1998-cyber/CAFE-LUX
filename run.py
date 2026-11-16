@@ -3,6 +3,7 @@
 import os
 import socket
 from cafe import create_app
+from deployment import load_environment, check_python
 
 
 def port_available(port=8000):
@@ -13,6 +14,8 @@ def port_available(port=8000):
 
 
 if __name__ == "__main__":
+    check_python()
+    load_environment()
     if not os.environ.get("CAFE_LUX_DATA_DIR"):
         raise SystemExit("CAFE_LUX_DATA_DIR is required. Run setup first.")
     try:

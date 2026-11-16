@@ -7,3 +7,7 @@ __pycache__/
 .env
 data/
 dist/
+
+cafe-lux.local.json
+cafe-lux.local.json.tmp
+setup-error.log

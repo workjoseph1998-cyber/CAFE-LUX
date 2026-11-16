@@ -87,11 +87,11 @@ def settings():
 
 
 def audit(action):
-    from flask import session
+    from flask import session, has_request_context
 
     db().execute(
         "INSERT INTO audit(username,action) VALUES (?,?)",
-        (session.get("username", "CLI"), action),
+        (session.get("username", "CLI") if has_request_context() else "CLI", action),
     )
 
 

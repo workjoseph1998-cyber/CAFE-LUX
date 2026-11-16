@@ -1,0 +1,43 @@
+name: Windows deployment regression
+on:
+  push:
+    branches: [fix/windows-setup-v1.1]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          architecture: x64
+      - name: Backend and operator regression tests
+        shell: powershell
+        run: |
+          python -m pip install -r requirements-dev.txt
+          python -m pytest -q
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: PowerShell parser and discovery diagnostics
+        shell: powershell
+        run: |
+          $bad = $false
+          Get-ChildItem scripts/*.ps1 | ForEach-Object {
+            $tokens = $null; $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors) { $bad = $true; $errors | Format-List }
+          }
+          if ($bad) { exit 1 }
+          & ./scripts/test_powershell.ps1
+      - name: Real batch installation, restart and stop from nested paths
+        shell: powershell
+        run: |
+          $env:CAFE_LUX_PYTHON = (python -c "import sys; print(sys.executable)")
+          & ./scripts/test_windows.ps1

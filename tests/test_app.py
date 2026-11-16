@@ -334,11 +334,11 @@ def test_cookie_security_and_headers(tmp_path):
     assert "frame-ancestors 'none'" in r.headers["Content-Security-Policy"]
 
 
-def test_protected_storage():
+def test_protected_storage(tmp_path):
     with pytest.raises(RuntimeError):
-        create_app({"DATA_DIR": "/workspace/CAFE-LUX/data"})
+        create_app({"DATA_DIR": str(Path(__file__).resolve().parents[1]/"data")})
     with pytest.raises(RuntimeError):
-        create_app({"DATA_DIR": "/tmp/CirrusWorkplace"})
+        create_app({"DATA_DIR": str(tmp_path/"CirrusWorkplace")})
 
 
 def test_current_price_revalidated(client, app):
