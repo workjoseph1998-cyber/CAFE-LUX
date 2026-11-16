@@ -1,0 +1,20 @@
+{% extends 'base.html' %}{% from '_cards.html' import cards with context %}{% block content %}<section class="page-intro">
+<span class="eyebrow">CAFÉ LUX / {{ tr('Shop') }}</span>
+<h1>{{ tr('Drinks' if kind=='drink' else 'Ground Coffee' if kind=='ground' else 'Discover the collection') }}</h1>
+<p>{{ tr('Choose your ritual') }}</p>
+</section>
+<section class="section catalog">
+<div class="tabs">
+<a class="{{ 'selected' if not kind }}" href="{{ url_for('public.shop') }}">{{ tr('Shop') }}</a>
+<a class="{{ 'selected' if kind=='drink' }}" href="{{ url_for('public.shop',kind='drink') }}">{{ tr('Drinks') }}</a>
+<a class="{{ 'selected' if kind=='ground' }}" href="{{ url_for('public.shop',kind='ground') }}">{{ tr('Ground Coffee') }}</a>
+</div>
+<form class="filters" method="get">
+<input type="hidden" name="kind" value="{{ kind or '' }}">
+<label>{{ tr('Search') }}<input name="q" value="{{ search }}" placeholder="{{ tr('Search') }}">
+</label>
+<label>{{ tr('All categories') }}<select name="category">
+<option value="">{{ tr('All categories') }}</option>{% for c in categories %}<option value="{{ c.id }}" {{ 'selected' if request.args.get('category')==c.id|string }}>{{ c.name_ar if ar and c.name_ar else c.name }}</option>{% endfor %}</select>
+</label>
+<button class="button outline">{{ tr('Search') }}</button>
+</form>{{ cards(products,ar,tr,site) }}</section>{% endblock %}

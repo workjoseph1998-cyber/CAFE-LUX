@@ -1,0 +1,14 @@
+{% extends 'base.html' %}{% block content %}<section class="section narrow confirmation">
+<span class="seal">✓</span>
+<span class="eyebrow">{{ tr('Order received') }}</span>
+<h1>{{ order.reference }}</h1>
+<p>{{ tr('We will confirm your order directly.') }}</p>
+<p>{{ tr(order.fulfillment) }} · {{ tr('Cash payment only') }}</p>{% for item in items %}<div class="summary-line">
+<span>{{ item.qty }} × {{ item.name }} · {{ item.label }}</span>
+<strong>{{ item.total|money }}</strong>
+</div>{% endfor %}<div class="cart-total">
+<span>{{ tr('Total') }}</span>
+<strong>{{ order.currency }} {{ order.total|money }}</strong>
+</div>
+<a class="button outline" href="{{ url_for('public.shop') }}">{{ tr('Back to shop') }}</a>
+</section>{% endblock %}

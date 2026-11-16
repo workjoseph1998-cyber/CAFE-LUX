@@ -1,0 +1,53 @@
+{% extends 'admin_base.html' %}{% block admin %}<h1>{{ 'Edit product' if p else 'New product' }}</h1>
+<form method="post" class="panel form-grid">
+<input type="hidden" name="csrf" value="{{ csrf_token }}">{% for key,label in [('name','Name · English'),('name_ar','Name · Arabic'),('description','Description · English'),('description_ar','Description · Arabic')] %}<label>{{ label }}{% if 'description' in key %}<textarea name="{{ key }}">{{ p[key] if p else '' }}</textarea>{% else %}<input name="{{ key }}" value="{{ p[key] if p else '' }}" {{ 'required' if key=='name' }}>{% endif %}</label>{% endfor %}<label>Type<select name="kind">{% for k in ['drink','ground'] %}<option value="{{ k }}" {{ 'selected' if p and p.kind==k }}>{{ k }}</option>{% endfor %}</select>
+</label>
+<label>Category<select name="category_id">
+<option value="">None</option>{% for c in categories %}<option value="{{ c.id }}" {{ 'selected' if p and p.category_id==c.id }}>{{ c.name }}</option>{% endfor %}</select>
+</label>
+<label>Main image<select name="image">
+<option value="">Brand illustration</option>{% for m in media %}<option value="{{ m.filename }}" {{ 'selected' if p and p.image==m.filename }}>{{ m.title }}</option>{% endfor %}</select>
+</label>
+<label>Gallery images · hold Ctrl / Command to select multiple<select name="gallery" multiple size="5">{% for m in media %}<option value="{{ m.filename }}" {{ 'selected' if p and m.filename in (p.gallery|fromjson) }}>{{ m.title }}</option>{% endfor %}</select>
+</label>{% for key,label in [('roast','Roast level'),('origin','Origin'),('bean','Bean type'),('notes','Flavor notes'),('grinds','Grinds · comma-separated, e.g. Whole beans,Fine,Medium'),('preparation','Preparation information'),('position','Display order')] %}<label>{{ label }}<input name="{{ key }}" value="{{ p[key] if p else '0' if key=='position' else '' }}">
+</label>{% endfor %}<label>Temperature<select name="temperature">{% for t in ['hot','cold','both'] %}<option {{ 'selected' if p and p.temperature==t }}>{{ t }}</option>{% endfor %}</select>
+</label>
+<div>
+<label class="check">
+<input type="checkbox" name="active" value="1" {{ 'checked' if p and p.active }}>Published</label>
+<label class="check">
+<input type="checkbox" name="featured" value="1" {{ 'checked' if p and p.featured }}>Featured</label>
+</div>
+<button class="button gold">Save product</button>
+</form>{% if p %}<h2>Sizes & package weights</h2>
+<p>Each option has an independent price. Blank price = not purchasable. Blank stock = untracked. Add any custom weight in grams. Disable an option to remove it from sale.</p>{% for v in variants|list+[none] %}<form method="post" action="{{ url_for('admin.option',pid=p.id) }}" class="panel option-form">
+<input type="hidden" name="csrf" value="{{ csrf_token }}">
+<input type="hidden" name="kind" value="variant">
+<input type="hidden" name="id" value="{{ v.id if v else 0 }}">
+<label>Label<input name="label" value="{{ v.label if v else '' }}" placeholder="200 g / Regular" required>
+</label>
+<label>Arabic label<input name="label_ar" value="{{ v.label_ar if v else '' }}">
+</label>
+<label>Weight in grams<input name="grams" type="number" min="1" value="{{ v.grams if v and v.grams else '' }}">
+</label>
+<label>Price · {{ site.currency }}<input name="price" type="number" min="0" step="0.01" value="{{ (v.price/100) if v and v.price is not none else '' }}">
+</label>
+<label>Stock<input name="stock" type="number" min="0" value="{{ v.stock if v and v.stock is not none else '' }}">
+</label>
+<label class="check">
+<input name="active" type="checkbox" value="1" {{ 'checked' if not v or v.active }}>Available</label>
+<button class="button outline">{{ 'Save' if v else 'Add size / weight' }}</button>
+</form>{% endfor %}<h2>Add-ons</h2>{% for a in addons|list+[none] %}<form method="post" action="{{ url_for('admin.option',pid=p.id) }}" class="panel option-form">
+<input type="hidden" name="csrf" value="{{ csrf_token }}">
+<input type="hidden" name="kind" value="addon">
+<input type="hidden" name="id" value="{{ a.id if a else 0 }}">
+<label>Name<input name="name" value="{{ a.name if a else '' }}" required>
+</label>
+<label>Arabic name<input name="name_ar" value="{{ a.name_ar if a else '' }}">
+</label>
+<label>Price<input name="price" type="number" min="0" step="0.01" value="{{ a.price/100 if a else '' }}" required>
+</label>
+<label class="check">
+<input name="active" type="checkbox" value="1" {{ 'checked' if not a or a.active }}>Available</label>
+<button class="button outline">{{ 'Save' if a else 'Add option' }}</button>
+</form>{% endfor %}{% endif %}{% endblock %}

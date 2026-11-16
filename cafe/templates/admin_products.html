@@ -1,0 +1,30 @@
+{% extends 'admin_base.html' %}{% block admin %}<div class="section-heading">
+<h1>Products</h1>
+<a class="button gold" href="{{ url_for('admin.edit_product',pid=0) }}">New product +</a>
+</div>
+<p>Drafts remain private until published. Archive by unchecking Published. Prices belong to each variant.</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Visibility</th>
+<th>Order</th>
+<th>
+</th>
+</tr>
+</thead>
+<tbody>{% for p in products %}<tr>
+<td>{{ p.name }}</td>
+<td>{{ p.kind }}</td>
+<td>{{ 'Published' if p.active else 'Draft / archived' }}</td>
+<td>{{ p.position }}</td>
+<td>
+<a href="{{ url_for('admin.edit_product',pid=p.id) }}">Edit →</a>
+</td>
+</tr>{% else %}<tr>
+<td colspan="5">Create your first product to begin.</td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>{% endblock %}

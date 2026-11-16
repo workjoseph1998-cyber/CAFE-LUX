@@ -1,0 +1,28 @@
+{% extends 'admin_base.html' %}{% block admin %}<h1>Media library</h1>
+<p>JPEG, PNG and WebP only, up to 8 MB / 20 megapixels. Images are decoded, resized and rewritten as JPEG, removing metadata. To replace an image, upload its replacement and select it in the product or website settings.</p>
+<form method="post" enctype="multipart/form-data" class="panel form-grid">
+<input type="hidden" name="csrf" value="{{ csrf_token }}">
+<label class="drop-zone">Drop an image here or choose a file<input type="file" name="upload" accept="image/jpeg,image/png,image/webp" required>
+</label>
+<label>File title<input name="title" maxlength="150" required>
+</label>
+<label>Alt text<input name="alt" maxlength="300">
+</label>
+<button class="button gold">Upload image</button>
+<img class="upload-preview" alt="Selected image preview" hidden>
+</form>
+<div class="media-grid">{% for m in media %}<article class="panel">
+<img class="media-preview" src="{{ url_for('public.media',filename=m.filename) }}" alt="{{ m.alt }}">
+<form method="post">
+<input type="hidden" name="csrf" value="{{ csrf_token }}">
+<input type="hidden" name="id" value="{{ m.id }}">
+<label>Title<input name="title" value="{{ m.title }}">
+</label>
+<label>Alt text<input name="alt" value="{{ m.alt }}">
+</label>
+<p class="filename">{{ m.filename }}</p>
+<p>Used by: {{ m.usage|join(', ') or 'Not referenced' }}</p>
+<button class="button outline">Save details</button>
+<button class="text-button" name="delete" value="1" {{ 'disabled' if m.usage }}>Delete</button>
+</form>
+</article>{% else %}<p>No images uploaded.</p>{% endfor %}</div>{% endblock %}

@@ -1,0 +1,43 @@
+{% extends 'admin_base.html' %}{% block admin %}<span class="eyebrow">YOUR BUSINESS, AT A GLANCE · UTC</span>
+<h1>Overview</h1>
+<div class="stats">{% for key,value in stats.items() %}<article class="panel">
+<small>{{ key.title() }} orders</small>
+<strong>{{ value }}</strong>
+</article>{% endfor %}<article class="panel">
+<small>Completed revenue only</small>{% for r in revenue %}<strong>{{ r.currency }} {{ r.total|money }}</strong>{% else %}<strong>—</strong>{% endfor %}</article>
+</div>
+<h2>Best sellers · completed orders</h2>
+<p>Product, variant, type, category, currency. Pending and cancelled orders excluded.</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Product / variant</th>
+<th>Type / category</th>
+<th>Quantity</th>
+<th>Revenue</th>
+</tr>
+</thead>
+<tbody>{% for key,value in sales.items() %}<tr>
+<td>{{ key[0] }} / {{ key[1] }}</td>
+<td>{{ key[2] }} / {{ key[3] }}</td>
+<td>{{ value.qty }}</td>
+<td>{{ key[4] }} {{ value.total|money }}</td>
+</tr>{% else %}<tr>
+<td colspan="4">No completed sales yet.</td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>
+<h2>Sales by category · completed only</h2>{% for key,total in category_sales.items() %}<p>{{ key[0] }} · {{ key[1] }} {{ total|money }}</p>{% else %}<p>No completed sales.</p>{% endfor %}<h2>Inventory warnings</h2>{% for v in inventory %}<p>{{ v.name }} · {{ v.label }}: {{ v.stock }} remaining</p>{% else %}<p>No low-stock variants.</p>{% endfor %}<div class="panel">
+<h2>Backups & privacy</h2>
+<p>Backups contain personal data. Store securely outside the web root. Retention anonymizes closed orders older than {{ site.retention_days }} days; expire old backups separately.</p>
+<form method="post" action="{{ url_for('admin.backup') }}">
+<input type="hidden" name="csrf" value="{{ csrf_token }}">
+<button class="button outline">Download database & media backup</button>
+</form>
+<form method="post" action="{{ url_for('admin.retention') }}" data-confirm="Anonymize old closed orders? This cannot be undone without a backup.">
+<input type="hidden" name="csrf" value="{{ csrf_token }}">
+<button class="text-button">Apply retention policy</button>
+</form>
+</div>
+<h2>Recent audit log</h2>{% for event in audit %}<p class="audit">{{ event.created }} · {{ event.username }} · {{ event.action }}</p>{% else %}<p>No events.</p>{% endfor %}{% endblock %}

@@ -1,0 +1,10 @@
+{% extends 'admin_base.html' %}{% block admin %}<h1>Categories</h1>{% for c in categories|list+[none] %}<form method="post" class="panel option-form">
+<input type="hidden" name="csrf" value="{{ csrf_token }}">
+<input type="hidden" name="id" value="{{ c.id if c else 0 }}">
+<label>Name<input name="name" value="{{ c.name if c else '' }}" required>
+</label>
+<label>Arabic name<input name="name_ar" value="{{ c.name_ar if c else '' }}">
+</label>
+<label>Display order<input type="number" name="position" min="0" value="{{ c.position if c else 0 }}">
+</label>
+<button class="button outline">{{ 'Save' if c else 'Create category' }}</button>{% if c %}<button name="delete" value="1" class="text-button">Delete</button>{% endif %}</form>{% endfor %}<p>Deleting a category leaves its products uncategorized.</p>{% endblock %}

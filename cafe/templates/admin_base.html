@@ -1,0 +1,10 @@
+{% extends 'base.html' %}{% block content %}<div class="admin-shell">
+<aside class="admin-nav">
+<span class="eyebrow">LUX / STUDIO</span>
+<h2>Administration</h2>{% for endpoint,title in [('dashboard','Overview'),('products','Products'),('categories','Categories'),('orders','Orders'),('media','Media library'),('config','Website & settings'),('users','Administrators')] %}<a href="{{ url_for('admin.'+endpoint) }}">{{ title }} →</a>{% endfor %}<form action="{{ url_for('admin.logout') }}" method="post">
+<input type="hidden" name="csrf" value="{{ csrf_token }}">
+<button class="text-button">Sign out</button>
+</form>
+</aside>
+<section class="admin-content">{% block admin %}{% endblock %}</section>
+</div>{% endblock %}

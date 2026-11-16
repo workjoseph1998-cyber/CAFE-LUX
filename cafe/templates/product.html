@@ -1,0 +1,29 @@
+{% extends 'base.html' %}{% from '_cards.html' import cards with context %}{% block title %}{{ p.name }} · {{ site.brand }}{% endblock %}{% block content %}<section class="section product-detail">
+<div>
+<div class="detail-image">{% if p.image %}<img id="main-product-image" src="{{ url_for('public.media',filename=p.image) }}" alt="{{ p.name }}">{% else %}<img id="main-product-image" src="{{ url_for('static',filename='images/'+p.kind+'.jpg') }}" alt="{{ tr('Coffee illustration') }}">{% endif %}</div>{% if gallery %}<div class="gallery">{% for image in ([p.image] if p.image else [])+gallery %}<button class="gallery-thumb" data-src="{{ url_for('public.media',filename=image) }}" aria-label="View image {{ loop.index }}">
+<img src="{{ url_for('public.media',filename=image) }}" alt="{{ p.name }} {{ loop.index }}">
+</button>{% endfor %}</div>{% endif %}</div>
+<div class="detail-copy">{% if not p.image %}<small class="image-note">{{ tr('Illustrative image') }}</small>{% endif %}<span class="eyebrow">CAFÉ LUX / {{ tr('Ground Coffee' if p.kind=='ground' else 'Drinks') }}</span>
+<h1>{{ p.name_ar if ar and p.name_ar else p.name }}</h1>
+<p>{{ p.description_ar if ar and p.description_ar else p.description }}</p>
+<form method="post" action="{{ url_for('public.add') }}" id="product-form">
+<input type="hidden" name="csrf" value="{{ csrf_token }}">
+<label>{{ tr('Size / weight') }}<select name="variant" id="variant" required>
+<option value="" data-price="">{{ tr('Choose your ritual') }}</option>{% for v in variants %}<option value="{{ v.id }}" data-price="{{ v.price if v.price is not none else '' }}" {{ 'disabled' if v.price is none or v.stock==0 }}>{{ v.label_ar if ar and v.label_ar else v.label }} · {% if v.price is not none %}{{ site.currency }} {{ v.price|money }}{% else %}{{ tr('Price pending') }}{% endif %}{{ ' · '+tr('Unavailable') if v.stock==0 }}</option>{% endfor %}</select>
+</label>{% if p.grinds %}<label>{{ tr('Grind') }}<select name="grind">{% for grind in p.grinds.split(',') %}<option>{{ grind }}</option>{% endfor %}</select>
+</label>{% endif %}{% if p.kind=='drink' %}<label>{{ tr('Temperature') }}<select name="temperature">{% for temp in (['hot','cold'] if p.temperature=='both' else [p.temperature]) %}<option value="{{ temp }}">{{ tr(temp) }}</option>{% endfor %}</select>
+</label>{% endif %}{% if addons %}<fieldset>
+<legend>{{ tr('Add-ons') }}</legend>{% for a in addons %}<label class="check">
+<input type="checkbox" name="addon" value="{{ a.id }}" data-price="{{ a.price }}">{{ a.name_ar if ar and a.name_ar else a.name }} <span>+ {{ a.price|money }}</span>
+</label>{% endfor %}</fieldset>{% endif %}<label>{{ tr('Quantity') }}<input name="qty" type="number" value="1" min="1" max="99" required>
+</label>
+<div class="purchase-row">
+<output id="product-total" data-currency="{{ site.currency }}">{{ tr('Choose your ritual') }}</output>
+<button class="button gold">{{ tr('Add to bag') }} →</button>
+</div>
+</form>
+<dl class="attributes">{% for key,label in [('roast','Roast'),('origin','Origin'),('bean','Bean'),('notes','Flavor notes'),('preparation','Preparation')] %}{% if p[key] %}<dt>{{ tr(label) }}</dt>
+<dd>{{ p[key] }}</dd>{% endif %}{% endfor %}</dl>
+</div>
+</section>{% if related %}<section class="section">
+<h2>{{ tr('You may also enjoy') }}</h2>{{ cards(related,ar,tr,site) }}</section>{% endif %}{% endblock %}
