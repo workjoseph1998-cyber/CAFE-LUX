@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.1.1 — 2026-11-17
+
+- Bundled 22 original sample illustrations at 480 × 400 px (236,346 bytes total; largest 11,379 bytes). No external image downloads.
+- Added private storefront-style catalog previews showing all approved draft products and their full descriptions.
+- Added one-click sample preparation and `prepare-catalog-preview` CLI, with a verified full backup and missing-fields-only updates. Existing images, edited descriptions, accounts, orders, prices and publication states are preserved.
+- Kept schema v4 and the existing Windows/WSGI deployment model; no automatic publishing, fabricated prices or deployment.
+
 ## 2.1.0 — 2026-11-17
 
 - Added an explicit, verified-backup-first, idempotent approved starter-catalog seed: 18 drinks, four coffees, independent 200 g / 500 g / 1 kg preparations and targeted draft customization. All start unpublished, with prices/stock unset and no assigned photography.

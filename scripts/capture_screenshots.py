@@ -18,7 +18,7 @@ from werkzeug.serving import make_server
 from playwright.sync_api import sync_playwright, expect
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = ROOT / "screenshots" / "v2.1"
+OUTPUT = ROOT / "screenshots" / "v2.1.1"
 
 
 def main():
@@ -126,6 +126,10 @@ def main():
                     ), (path + " body overflow")
 
                 def shot(name, full=False):
+                    if full:
+                        page.locator("img").evaluate_all(
+                            "async images => { images.forEach(image => image.loading = 'eager'); await Promise.all(images.map(image => image.decode())); }"
+                        )
                     page.screenshot(path=str(OUTPUT / (name + ".png")), full_page=full)
 
                 goto("/")
@@ -203,6 +207,32 @@ def main():
                 checks.append(
                     "Sidebar collapse/expand, icon tooltips and density preferences survive reload"
                 )
+                goto("/admin/catalog-preview")
+                expect(page.locator("main")).to_contain_text(
+                    "Short, concentrated coffee."
+                )
+                page.get_by_role(
+                    "button", name="Add sample images & descriptions"
+                ).click()
+                page.wait_for_load_state("networkidle")
+                expect(page.locator(".flash")).to_contain_text("22 sample images added")
+                assert page.locator(".product-grid .product-card").count() == 18
+                assert page.locator(".product-grid img").first.evaluate(
+                    "(image)=>image.complete&&image.naturalWidth>0"
+                )
+                shot("catalog-preview-drinks-desktop", True)
+                goto("/admin/catalog-preview?kind=ground")
+                assert page.locator(".product-grid .product-card").count() == 4
+                shot("catalog-preview-coffee-desktop", True)
+                page.set_viewport_size({"width": 390, "height": 844})
+                goto("/admin/catalog-preview?kind=drink")
+                shot("catalog-preview-drinks-mobile", True)
+                page.set_viewport_size({"width": 1366, "height": 768})
+                checks.append(
+                    "One-click sample preparation, 22 small served images, full descriptions, private desktop/mobile catalog preview; drafts remain unpublished"
+                )
+                goto("/admin/drinks")
+
                 page.fill("[name=q]", "Iced")
                 page.select_option("[name=status]", "draft")
                 page.get_by_role("button", name="Apply", exact=True).click()

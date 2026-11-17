@@ -57,3 +57,8 @@ Open **Drinks** or **Beans & Ground Coffee** in admin. Filter Draft and use Miss
 Publication requires a name, description, registered uploaded photo present on disk, active category and at least one enabled priced variant. Every enabled variant must have a price, and no enabled extra may retain a pending price. Save incomplete products as drafts. Drafts never appear in public catalogs, search, featured sections or direct product URLs and cannot be ordered by a crafted request. Disabling the last priced variant of an already published product is refused; draft the product first.
 
 Small neutral admin icons and the existing explicitly illustrative storefront fallbacks are placeholders, not real product photography. Seeding never replaces an uploaded image. Actual package artwork must come from the owner or an approved licensed source.
+
+
+### V2.1.1 visual testing shortcut
+
+Open **Catalog preview** in admin and click **Add sample images & descriptions**. This fills missing seeded images/descriptions after a verified full backup while preserving edits and draft/pricing state. The private preview shows all approved drafts immediately without publishing. See `CATALOG-PREVIEW.md`. The original seed remains draft-only and does not assign images automatically; preparing samples is an explicit action.

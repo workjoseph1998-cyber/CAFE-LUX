@@ -1058,3 +1058,57 @@ def order_detail(oid):
         .fetchall(),
     )
     return render_template("admin_order_detail.html", o=row, statuses=STATUSES)
+
+
+@bp.post("/catalog-preview/prepare")
+@protected
+def prepare_catalog_assets():
+    from .catalog_preview import prepare_catalog_preview
+
+    try:
+        result = prepare_catalog_preview()
+        flash(
+            f"Catalog ready: {result['images']} sample images added; {result['descriptions']} missing descriptions filled. Your existing content, prices and publication settings were preserved."
+        )
+    except (ValueError, OSError) as error:
+        flash(str(error))
+    return redirect(url_for("admin.catalog_preview"))
+
+
+@bp.get("/catalog-preview")
+@protected
+def catalog_preview():
+    from .catalog_preview import starter_descriptions, sample_source
+
+    kind = request.args.get("kind", "drink")
+    if kind not in ("drink", "ground"):
+        abort(404)
+    descriptions = starter_descriptions()
+    rows = (
+        db()
+        .execute(
+            """SELECT p.*,c.name category,
+        (SELECT min(price) FROM variants WHERE product_id=p.id AND active=1) starting_price,
+        (SELECT count(*) FROM variants WHERE product_id=p.id) variant_count
+        FROM products p LEFT JOIN categories c ON p.category_id=c.id
+        WHERE p.starter_key LIKE 'starter.v21.product.%' AND p.kind=?
+        ORDER BY c.position,p.position,p.id""",
+            (kind,),
+        )
+        .fetchall()
+    )
+    products = []
+    for p in rows:
+        item = dict(p)
+        item["description"] = p["description"] or descriptions.get(p["starter_key"], "")
+        source = sample_source(p["starter_key"])
+        item["preview_asset"] = (
+            "images/starter-samples/" + source.name
+            if source
+            else "images/" + p["kind"] + ".jpg"
+        )
+        item["sample_image"] = not p["image"] or p["image"].startswith(
+            "starter-sample-"
+        )
+        products.append(item)
+    return render_template("catalog_preview.html", products=products, kind=kind)

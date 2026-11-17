@@ -1,10 +1,10 @@
-# Café LUX 2.1 validation — 2026-11-17
+# Café LUX 2.1.1 validation — 2026-11-17
 
 Linux development environment, Python 3.12, Flask 3.1.2, SQLite, headless Chromium. All accounts, orders, photos and prices used for checks are synthetic fixtures in temporary external directories. No business database, Windows VM or PythonAnywhere account was accessed. No WhatsApp message was sent.
 
 ## Automated application checks
 
-94 tests pass with `.venv/bin/python -m pytest -q`, including the retained V2.0 regression suite and new V2.1 cases:
+98 tests pass with `.venv/bin/python -m pytest -q`, including the retained V2.0 regression suite and new V2.1 cases:
 
 - Approved catalog: exactly four drink categories/18 drinks and four coffee categories/four packaged coffees on an empty database; 62 total independently configured variants with 200 g/500 g/1 kg package combinations. Appropriate single servings/sizes and hot/cold separation.
 - All seeded products unpublished/unfeatured; no selling prices, stock, assigned photos or fabricated origin/composition/roast/tasting facts. Extras remain pending and disabled, with explicit zero distinguished from an unreviewed numeric storage sentinel.
@@ -36,3 +36,8 @@ Browser flow verifies default Compact density, remembered Comfortable/Compact ch
 These are Linux/Chromium results, not execution on Windows Server 2022, IIS/ARR, PythonAnywhere, iOS Safari or Android Chrome. Windows setup repetition, process ownership/stop behavior, NTFS permissions, the actual 172.18.69.59 binding and real PythonAnywhere Web-tab/proxy settings must be checked manually on their respective environments. WSGI smoke tests do not claim a hosted deployment. Actual WhatsApp handoff, Send, receipt and delivery were not tested or claimed.
 
 Scheduled slots remain administrator-maintained enabled labels, not automatic calendar/capacity management. Name-conflict detection is deliberately conservative. Starter descriptions/recipes and photo authenticity need owner review; software validation cannot verify ingredient truth or image ownership. Public availability begins only after explicit administrator publication.
+
+
+## V2.1.1 sample-image and description update
+
+Four additional automated tests check all 22 JPEG dimensions/file sizes, missing-fields-only preparation, verified full backup including existing media, repeat-run idempotency, preservation of owner photos/descriptions and business data, authenticated preview routes, CSRF/role enforcement through the existing guards, no publication/pricing changes and CLI directory confirmation. A private preview browser flow checks the one-click action and actual served images plus full descriptions on desktop/mobile. Current screenshots/report are under `screenshots/v2.1.1/`; V2.1 baseline captures remain under `screenshots/v2.1/`. No VM or hosted deployment was performed.

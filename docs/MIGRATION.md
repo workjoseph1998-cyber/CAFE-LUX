@@ -14,7 +14,7 @@ $env:CAFE_LUX_DATA_DIR = 'C:\CafeLuxData'
 
 Keep that backup securely off the VM as well. Preserve the old release folder, runtime configuration, session key and dependencies. Do not copy any Cirrus database or storage.
 
-3. Extract `Cafe-LUX-Version-2.1-Windows-PythonAnywhere.zip` to a **new** directory under `C:\Users\Administrator\Desktop\CafeLUX`. Open PowerShell there and keep the same `CAFE_LUX_DATA_DIR` environment value. Existing accounts/passwords, settings, orders and images are reused, not reinitialized.
+3. Extract `Cafe-LUX-Version-2.1.1-Catalog-Images.zip` to a **new** directory under `C:\Users\Administrator\Desktop\CafeLUX`. Open PowerShell there and keep the same `CAFE_LUX_DATA_DIR` environment value. Existing accounts/passwords, settings, orders and images are reused, not reinitialized.
 
 ```powershell
 .\setup.bat
@@ -55,3 +55,6 @@ Review feature branch → approve/merge to main → pause/drain → `manage.py p
 Drain and stop the new release. Preserve a current backup if any new business data was entered. Run the previous release with the matching **pre-upgrade** full database/media backup, restored using its own documented offline restore command. A pre-upgrade restore excludes new orders created since the snapshot; reconcile those before rollback. Do not downgrade schema in place or run old code against v4. Keep Git history intact; no force-push/reset of shared branches is needed.
 
 For emergency database-only recovery from a verified raw snapshot, stop all app processes, preserve the current database separately, and copy the selected snapshot to the configured `cafe.sqlite3` path; media is unchanged by migration/seeding. Reopen and verify it with the matching release before resuming.
+
+
+For an existing V2.1 installation, V2.1.1 keeps schema v4. Reuse the same data directory/account, update the source and run setup normally. Do not seed again just for images. Open Admin → Catalog preview → Add sample images & descriptions; see `CATALOG-PREVIEW.md`. This one-click action backs up first and fills only missing seeded content.

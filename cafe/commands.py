@@ -212,3 +212,27 @@ def register(app):
         result = seed_catalog(dry_run=dry_run)
         for line in result:
             click.echo(line)
+
+    @app.cli.command("prepare-catalog-preview")
+    @click.option("--confirm-data-dir", required=True, type=click.Path(path_type=Path))
+    def prepare_preview(confirm_data_dir):
+        from .catalog_preview import prepare_catalog_preview
+
+        data = Path(app.config["DATA_DIR"])
+        click.echo(f"Data directory: {data}")
+        if confirm_data_dir.resolve() != data:
+            raise click.ClickException(
+                "Directory mismatch. No catalog content changed."
+            )
+        try:
+            result = prepare_catalog_preview()
+        except (ValueError, OSError) as error:
+            raise click.ClickException(str(error)) from error
+        click.echo(
+            f"Added {result['images']} small sample images; filled {result['descriptions']} missing descriptions."
+        )
+        if result["backup"]:
+            click.echo("Verified database + existing media backup: " + result["backup"])
+        click.echo(
+            "Existing edits, prices, stock and publication state preserved. Open Admin → Catalog preview."
+        )

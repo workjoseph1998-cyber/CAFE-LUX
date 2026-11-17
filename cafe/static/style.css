@@ -1659,3 +1659,5 @@ th {
   stroke-linejoin: round;
   stroke-linecap: round;
 }
+
+.preview-actions { justify-content: center; margin: 24px auto 0; }
