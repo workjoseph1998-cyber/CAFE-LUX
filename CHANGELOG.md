@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.0.0 — 2026-11-17
+
+- Rebuilt the customer design system around Espresso Editorial Luxury: full-bleed imagery, oversized typography, asymmetric collection scenes, new product cards, navigation, footer and brand-story layouts.
+- Redesigned product customization, galleries and quantity controls; added a server-backed accessible bag drawer with live edits and a dedicated checkout footer. Full-page/no-JavaScript cart remains available.
+- Rebuilt checkout, final review and pending WhatsApp screens with live real delivery totals, mobile item disclosure, accurate submission language and existing duplicate protection.
+- Added a published-data Coffee Finder, browser-local recently viewed product IDs with server visibility revalidation, actual ordering-status labels, expanded RTL translations and reduced-motion-safe microinteractions.
+- Replaced the admin visual system with a separate compact operations workspace, redesigned metrics/activity panels, sidebar/header, catalog/order tables, editor/forms, statuses and inspector. Existing role checks and business actions remain.
+- Kept schema v4, Windows scripts/port, WSGI entry point, dependencies, business data, uploads, prices, stock logic and WhatsApp routing. No automatic merge or deployment.
+
 ## Final catalog — 2.1.2
 
 - Added the owner-requested explicit action to fill missing illustrations, descriptions and editable sample prices, then publish starter products on the actual customer storefront.

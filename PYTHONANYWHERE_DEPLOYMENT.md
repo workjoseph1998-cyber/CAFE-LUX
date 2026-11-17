@@ -1,4 +1,4 @@
-# Café LUX 2.1 — PythonAnywhere free-plan guide
+# Café LUX 3.0 — PythonAnywhere free-plan guide
 
 Manual instructions only. Nothing is deployed by Codex or by these scripts. Windows and PythonAnywhere use the same Flask source but **separate private data directories**. Do not synchronize customer data automatically. Keep the Windows IIS/Waitress installation unchanged.
 
@@ -14,7 +14,7 @@ git checkout main
 git pull --ff-only origin main
 ```
 
-Use your own private Git authentication if required; never paste tokens into tracked files. Confirm the approved Version 2.1 commit with `git log -1 --oneline` and `cat VERSION`. Do not deploy an unreviewed branch accidentally.
+Use your own private Git authentication if required; never paste tokens into tracked files. Confirm the approved Version 3.0 commit with `git log -1 --oneline` and `cat VERSION`. Do not deploy an unreviewed branch accidentally.
 
 ## 2. Python and persistent configuration
 
@@ -138,3 +138,8 @@ Free account quotas and supported Python versions can change; verify them in you
 Images are decoded, resized and stored as JPEGs. Keep uploads small and manually manage backups/log retention within your quota. Avoid copying a Windows virtualenv to Linux. Inspect **Web → Log files → Error log / Server log / Access log** for import, path, host and permission failures; logs may contain private operational details. A 400 invalid host usually means the WSGI hostname allowlist is wrong; a missing data-dir error means the WSGI environment was not set. Debug mode must remain disabled.
 
 These instructions and WSGI smoke tests were prepared on Linux. No PythonAnywhere account was accessed or deployed, and no Windows VM/IIS execution is claimed.
+
+
+## V3 UI upgrade note
+
+The V3 redesign is reviewed on `feature/cafe-lux-v3-redesign` before any merge into main. It keeps schema v4, the WSGI import, data paths, static mapping and production requirements. Do not rerun starter/sample-price tools during an existing-data UI upgrade. The new cart/Finder/recent-product requests are same-origin and require no outbound integration. See `docs/V3-UPGRADE.md`. No hosting deployment was performed.
