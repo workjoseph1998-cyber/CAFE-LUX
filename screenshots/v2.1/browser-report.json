@@ -1,0 +1,63 @@
+{
+  "result": "PASS",
+  "browser": "Chromium Linux headless",
+  "data": "Disposable synthetic fixtures; all demo prices, accounts and orders discarded",
+  "checks": [
+    "Draft catalog hidden from home, drinks and coffee; public design retained",
+    "Dashboard, product/editor and order tables at 1366x768,1440x900,1920x1080; columns accessible",
+    "Sidebar collapse/expand, icon tooltips and density preferences survive reload",
+    "Product search, draft filter, selection and validated bulk drafting",
+    "Editor dirty-state warning, reviewed draft save, photo upload, independent variant price and valid publish",
+    "Published starter appears only in drinks and can enter the validated cart",
+    "Order inspector displays private details; full detail status update works without claiming WhatsApp delivery",
+    "Compact forms, scrollable complete tables and mobile navigation at 390px"
+  ],
+  "measurements": [
+    {
+      "viewport": "1366x768",
+      "page": "/admin/drinks",
+      "visible_rows": 8
+    },
+    {
+      "viewport": "1366x768",
+      "page": "/admin/coffee",
+      "visible_rows": 4
+    },
+    {
+      "viewport": "1366x768",
+      "page": "/admin/orders",
+      "visible_rows": 9
+    },
+    {
+      "viewport": "1440x900",
+      "page": "/admin/drinks",
+      "visible_rows": 11
+    },
+    {
+      "viewport": "1440x900",
+      "page": "/admin/coffee",
+      "visible_rows": 4
+    },
+    {
+      "viewport": "1440x900",
+      "page": "/admin/orders",
+      "visible_rows": 12
+    },
+    {
+      "viewport": "1920x1080",
+      "page": "/admin/drinks",
+      "visible_rows": 15
+    },
+    {
+      "viewport": "1920x1080",
+      "page": "/admin/coffee",
+      "visible_rows": 4
+    },
+    {
+      "viewport": "1920x1080",
+      "page": "/admin/orders",
+      "visible_rows": 16
+    }
+  ],
+  "javascript_errors": []
+}

@@ -1,43 +1,4 @@
-{% extends 'admin_base.html' %}{% block admin %}<span class="eyebrow">YOUR BUSINESS, AT A GLANCE · UTC</span>
-<h1>Overview</h1>
-<div class="stats">{% for key,value in stats.items() %}<article class="panel">
-<small>{{ key.title() }} orders</small>
-<strong>{{ value }}</strong>
-</article>{% endfor %}<article class="panel">
-<small>Delivered product revenue</small>{% for r in revenue %}<strong>{{ r.currency }} {{ r.total|money }}</strong>{% else %}<strong>—</strong>{% endfor %}</article>
-</div>
-<p class="fineprint">Revenue reports product sales from delivered orders; delivery charges are excluded.</p><h2>Best sellers · delivered orders</h2>
-<p>Product, variant, type, category, currency. Pending and cancelled orders excluded.</p>
-<div class="table-wrap">
-<table>
-<thead>
-<tr>
-<th>Product / variant</th>
-<th>Type / category</th>
-<th>Quantity</th>
-<th>Revenue</th>
-</tr>
-</thead>
-<tbody>{% for key,value in sales.items() %}<tr>
-<td>{{ key[0] }} / {{ key[1] }}</td>
-<td>{{ key[2] }} / {{ key[3] }}</td>
-<td>{{ value.qty }}</td>
-<td>{{ key[4] }} {{ value.total|money }}</td>
-</tr>{% else %}<tr>
-<td colspan="4">No delivered sales yet.</td>
-</tr>{% endfor %}</tbody>
-</table>
-</div>
-<h2>Sales by category · delivered only</h2>{% for key,total in category_sales.items() %}<p>{{ key[0] }} · {{ key[1] }} {{ total|money }}</p>{% else %}<p>No delivered sales.</p>{% endfor %}<h2>Inventory warnings</h2>{% for v in inventory %}<p>{{ v.name }} · {{ v.label }}: {{ v.stock }} remaining</p>{% else %}<p>No low-stock variants.</p>{% endfor %}{% if admin_role=='admin' %}<div class="panel">
-<h2>Backups & privacy</h2>
-<p>Backups contain personal data. Store securely outside the web root. Retention anonymizes closed orders older than {{ site.retention_days }} days; expire old backups separately.</p>
-<form method="post" action="{{ url_for('admin.backup') }}">
-<input type="hidden" name="csrf" value="{{ csrf_token }}">
-<button class="button outline">Download database & media backup</button>
-</form>
-<form method="post" action="{{ url_for('admin.retention') }}" data-confirm="Anonymize old closed orders? This cannot be undone without a backup.">
-<input type="hidden" name="csrf" value="{{ csrf_token }}">
-<button class="text-button">Apply retention policy</button>
-</form>
-</div>
-{% endif %}<h2>Recent audit log</h2>{% for event in audit %}<p class="audit">{{ event.created }} · {{ event.username }} · {{ event.action }}</p>{% else %}<p>No events.</p>{% endfor %}{% endblock %}
+{% extends 'admin_base.html' %}{% block admin %}<div class="page-heading"><div><span class="eyebrow">BUSINESS AT A GLANCE</span><h1>Overview</h1></div><div class="actions"><a class="button outline" href="/admin/orders">View orders →</a>{% if admin_role=='admin' %}<a class="button" href="/admin/products?status=draft">Review drafts →</a>{% endif %}</div></div>
+<div class="summary-grid">{% for key,label in [('today',"Today's orders"),('Pending WhatsApp Submission','Pending WhatsApp'),('Preparing','Preparing'),('Out for Delivery','Out for delivery'),('Delivered','Delivered')] %}<article class="summary-card"><span>{{ label }}</span><strong>{{ stats.get(key,0) }}</strong></article>{% endfor %}<article class="summary-card"><span>Delivered product revenue</span><strong class="revenue">{% for r in revenue %}{{ r.currency }} {{ r.total|money }}{{ ' / ' if not loop.last }}{% else %}—{% endfor %}</strong></article><article class="summary-card"><span>Products needing attention</span><strong>{{ stats.attention }}</strong></article></div>
+<div class="dashboard-grid"><section class="panel"><div class="panel-heading"><h2>Recent orders</h2><a href="/admin/orders">All orders →</a></div><div class="table-wrap"><table><thead><tr><th>Reference</th><th>Customer / area</th><th>Status</th><th>Total</th><th></th></tr></thead><tbody>{% for o in recent %}<tr><td><a href="{{ url_for('admin.order_detail',oid=o.id) }}">{{ o.reference }}</a><small>{{ o.created }}</small></td><td>{{ o.name }}<small>{{ o.area }}</small></td><td><span class="badge {{ 'success' if o.status=='Delivered' else 'draft' }}">{{ o.status }}</span></td><td>{{ (o.currency+' '+(o.total|money)) if o.fee_known else 'Fee pending' }}</td><td><a href="{{ url_for('admin.order_detail',oid=o.id) }}" data-inspect="{{ o.id }}">Inspect</a></td></tr>{% else %}<tr><td colspan="5" class="empty">No orders yet. Pending WhatsApp links do not prove receipt.</td></tr>{% endfor %}</tbody></table></div></section><section class="panel"><div class="panel-heading"><h2>Catalog attention</h2><a href="/admin/products?status=draft">Review →</a></div><div class="table-wrap"><table><thead><tr><th>Product</th><th>Needs review</th></tr></thead><tbody>{% for p in attention %}<tr><td><a href="{{ url_for('admin.edit_product',pid=p.id) }}">{{ p.name }}</a><small>{{ 'Published' if p.active else 'Draft' }}</small></td><td>{% if not p.image %}<span class="badge warning">Image</span>{% endif %}{% if p.missing_prices %}<span class="badge warning">Price</span>{% endif %}{% if not p.description %}<span class="badge warning">Content</span>{% endif %}</td></tr>{% else %}<tr><td colspan="2" class="empty">No catalog actions pending.</td></tr>{% endfor %}</tbody></table></div></section><section class="panel"><div class="panel-heading"><h2>Low stock</h2><span class="muted">5 or fewer remaining</span></div><div class="table-wrap"><table><thead><tr><th>Product / variant</th><th>Remaining</th></tr></thead><tbody>{% for v in inventory %}<tr><td><a href="{{ url_for('admin.edit_product',pid=v.product_id) }}#variants">{{ v.name }}</a><small>{{ v.label }}</small></td><td><span class="badge warning">{{ v.stock }}</span></td></tr>{% else %}<tr><td colspan="2" class="empty">No low-stock variants.</td></tr>{% endfor %}</tbody></table></div></section><section class="panel"><div class="panel-heading"><h2>Pending actions</h2></div><ul class="action-list"><li><a href="/admin/orders?status=Pending+WhatsApp+Submission">{{ stats.get('Pending WhatsApp Submission',0) }} pending WhatsApp submissions</a><small>Mark Received only after seeing the message.</small></li><li><a href="/admin/orders?status=Confirmed">{{ stats.get('Confirmed',0) }} confirmed orders</a><small>Move to Preparing when work starts.</small></li><li><span>{{ stats.attention }} products need attention</span><small>Photos, descriptions and enabled prices are required.</small></li></ul></section></div>
+{% if admin_role=='admin' %}<details class="editor-section"><summary>Backups, privacy & recent audit <span>Administrative tools</span></summary><p>Backups contain private data. Retention applies to closed orders older than {{ site.retention_days }} days; expire backup copies separately.</p><div class="actions"><form method="post" action="/admin/backup"><input type="hidden" name="csrf" value="{{ csrf_token }}"><button class="button outline">Download database & media backup</button></form><form method="post" action="/admin/retention" data-confirm="Anonymize old closed orders? This cannot be undone without a backup."><input type="hidden" name="csrf" value="{{ csrf_token }}"><button class="button outline">Apply retention policy</button></form></div><div class="audit-list">{% for event in audit %}<p>{{ event.created }} · {{ event.username }} · {{ event.action }}</p>{% endfor %}</div></details>{% endif %}<p class="fineprint">Revenue is from delivered product sales; delivery fees are excluded. A WhatsApp link does not confirm message delivery.</p>{% endblock %}

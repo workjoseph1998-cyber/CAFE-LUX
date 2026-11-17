@@ -161,10 +161,15 @@ def test_two_customers_cannot_oversell(app):
         assert db().execute("SELECT stock FROM variants WHERE id=1").fetchone()[0] == 10
     operator = app.test_client()
     login(operator)
-    post(operator, "/admin/orders", {"id":1,"status":"Confirmed"})
-    post(operator, "/admin/orders", {"id":2,"status":"Confirmed"})
+    post(operator, "/admin/orders", {"id": 1, "status": "Confirmed"})
+    post(operator, "/admin/orders", {"id": 2, "status": "Confirmed"})
     with app.app_context():
-        assert db().execute("SELECT count(*) FROM orders WHERE status='Confirmed'").fetchone()[0] == 1
+        assert (
+            db()
+            .execute("SELECT count(*) FROM orders WHERE status='Confirmed'")
+            .fetchone()[0]
+            == 1
+        )
         assert db().execute("SELECT stock FROM variants WHERE id=1").fetchone()[0] == 3
 
 
@@ -222,7 +227,8 @@ def test_admin_catalog_and_content(client, app):
         "description": "<script>alert(1)</script>",
         "kind": "drink",
         "temperature": "hot",
-        "active": 1,
+        "active": 0,
+        "category_id": 1,
         "position": 0,
     }
     post(client, "/admin/products/0", data)
@@ -233,6 +239,24 @@ def test_admin_catalog_and_content(client, app):
         f"/admin/products/{pid}/option",
         {"kind": "variant", "label": "Small", "price": "7.17", "active": 1},
     )
+    image = io.BytesIO()
+    Image.new("RGB", (30, 30), "brown").save(image, "PNG")
+    image.seek(0)
+    post(
+        client,
+        "/admin/media",
+        {
+            "upload": (image, "photo.png"),
+            "assign_product": pid,
+            "title": "Synthetic photo",
+        },
+    )
+    with app.app_context():
+        filename = (
+            db().execute("SELECT image FROM products WHERE id=?", (pid,)).fetchone()[0]
+        )
+    data["image"] = filename
+    post(client, f"/admin/products/{pid}", dict(data, active=1))
     html = client.get("/product/" + str(pid)).text
     assert "7.17" in html and "&lt;script&gt;" in html
     post(
@@ -306,7 +330,7 @@ def test_backup_restore_and_migration(app, client):
     with again.app_context():
         assert db().execute("SELECT count(*) FROM orders").fetchone()[0] == 1
         assert (
-            db().execute("SELECT max(version) FROM schema_version").fetchone()[0] == 3
+            db().execute("SELECT max(version) FROM schema_version").fetchone()[0] == 4
         )
 
 
@@ -414,7 +438,9 @@ def test_concurrent_duplicate_submit(app, client):
             "order_token": s["order_token"],
             "name": "Synthetic Customer",
             "phone": "+96171111111",
-            "address": "Synthetic test street", "building": "Test landmark", "area": "1",
+            "address": "Synthetic test street",
+            "building": "Test landmark",
+            "area": "1",
         }
     client.post("/checkout", data=form)
     form["confirm"] = "1"

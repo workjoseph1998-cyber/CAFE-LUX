@@ -1,0 +1,15 @@
+# Copy into the WSGI configuration file linked in PythonAnywhere's Web tab.
+# Replace YOUR_USERNAME and paths with your actual account values.
+import os
+import sys
+
+source = '/home/YOUR_USERNAME/CAFE-LUX'
+if source not in sys.path:
+    sys.path.insert(0, source)
+os.environ['CAFE_LUX_DATA_DIR'] = '/home/YOUR_USERNAME/cafe-lux-data'
+os.environ['CAFE_LUX_ALLOWED_HOSTS'] = 'YOUR_USERNAME.pythonanywhere.com'
+os.environ['CAFE_LUX_INSECURE_LOCAL'] = '0'
+# PythonAnywhere terminates HTTPS and supplies X-Forwarded-Proto. Trust only
+# that scheme header, never forwarded client IPs or hosts. Verify HTTPS cookies.
+os.environ['CAFE_LUX_TRUST_PROXY'] = '1'
+from wsgi import application  # noqa: E402,F401

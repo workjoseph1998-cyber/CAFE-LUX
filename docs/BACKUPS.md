@@ -23,3 +23,11 @@ The command validates the paths, total expanded size (max 2 GB), database integr
 Retain your current `session.key` for ordinary restores, or remove it **while the server is stopped** to create a fresh key on the next initialization and invalidate all existing sessions. The restored database includes its administrative users, settings and audit history. Reinitialize before startup if the key was removed, and verify login, gallery images and an order after restoration.
 
 Backup media integrity is bounded by the upload checks; a ZIP CRC check is performed by Python during extraction, and SQLite integrity is checked before replacement. This is not cryptographic proof of authenticity. Copy archives only over trusted, access-controlled channels.
+
+## Version 2.1 safeguards
+
+`manage.py prepare-update` creates and verifies a full database/media backup before an operator updates code. `manage.py backup`, `prepare-update` and `migration-status` skip automatic schema initialization. Missing, empty or invalid application databases are refused by the backup helper. Every archive has a new timestamped name; previous backups are never overwritten. ZIP CRCs and a reopened SQLite integrity check validate the saved output.
+
+Migrations and explicit catalog seeding also take unique verified database-only snapshots below the configured backups directory. Those are emergency snapshots, not full media archives; these operations never change uploaded media. Restore them only while stopped, preserving the current database first. Version 2.1 restore accepts trusted application schema v2, v3 and v4 archives. Re-run the matching release's migration before startup when required.
+
+Pause catalog/media editing and drain requests for a coherent backup/update/restore maintenance window. A SQLite online backup is consistent, but a stream of simultaneous media changes cannot guarantee a database-plus-files snapshot. Keep the installation session key separately protected. `migration-status` is schema read-only; the app still validates/creates its data directories and installation key when needed.

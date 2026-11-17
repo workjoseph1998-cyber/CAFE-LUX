@@ -27,3 +27,9 @@ Disable ordering and drain active IIS requests before stopping. Windows Stop-Pro
 ## VM acceptance checklist
 
 Run setup twice; run diagnostics; create admin; start; verify local homepage, both catalogs, configured extras/weights, mixed cart, delivery review and pending WhatsApp message. Test admin stock confirmation and image upload, stop/restart and persistence. Verify the existing IIS URL after adding its hostname. Check occupied-port refusal and that stop affects only Café LUX. No Windows VM execution is claimed from Linux development checks.
+
+## Version 2.1 upgrade
+
+See `MIGRATION.md` before extracting over any files. Reuse the existing dedicated data directory and administrator; do not recreate the account or replace SQLite. Setup preserves runtime.json and now includes `172.18.69.59` in the **fresh-install** example allowlist only. Existing files/environment values remain authoritative. The current VM uses `172.18.69.59:80` in IIS and `127.0.0.1:8000` in Waitress; neither binding is modified.
+
+After setup, run `manage.py migration-status`, `manage.py migrate`, then the separate `seed-starter-catalog --dry-run` / `--confirm-data-dir` commands in the migration guide. New products stay draft and unpriced. Existing accounts, uploads and order records remain. No Windows/IIS execution was performed in Linux development; test setup twice, diagnostics, occupied-port refusal, controlled stop/start and persistence on your VM before relying on it.

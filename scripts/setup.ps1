@@ -17,11 +17,11 @@ if (!(Test-Path $Python)) {
 if ($LASTEXITCODE -ne 0) { throw 'Dependency installation failed.' }
 & $Python -m flask --app cafe:create_app init-db
 if ($LASTEXITCODE -ne 0) { throw 'Database initialization failed.' }
-Write-Host 'Database ready. No default admin or products are published.'
-Write-Host 'Create an admin: .venv\Scripts\python.exe -m flask --app cafe:create_app create-admin'
+Write-Host 'Database ready; existing data preserved. No accounts or starter products added automatically.'
+Write-Host 'Fresh installation only: .venv\Scripts\python.exe manage.py init-admin (reuse existing accounts on upgrade).'
 Write-Host 'Use restrictive NTFS permissions on the data directory. See docs/WINDOWS.md.'
 
 if (!(Test-Path $ConfigFile)) {
-    @{ CAFE_LUX_ALLOWED_HOSTS = 'localhost,127.0.0.1'; CAFE_LUX_INSECURE_LOCAL = '1' } | ConvertTo-Json | Set-Content $ConfigFile
+    @{ CAFE_LUX_ALLOWED_HOSTS = 'localhost,127.0.0.1,172.18.69.59'; CAFE_LUX_INSECURE_LOCAL = '1' } | ConvertTo-Json | Set-Content $ConfigFile
 }
-Write-Host 'Local HTTP mode is enabled for VM testing. Configure HTTPS and secure cookies before future public use.'
+Write-Host 'Existing runtime configuration preserved. Check runtime.json; local HTTP mode must not be used for future public HTTPS.'

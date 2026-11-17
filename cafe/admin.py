@@ -21,9 +21,19 @@ from flask import (
 from werkzeug.security import check_password_hash, generate_password_hash
 from .db import db, audit, settings, DEFAULTS
 from .public import integer, cents
+from .catalog import publication_issues, validate_publication
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
-STATUSES = ["Pending WhatsApp Submission", "Received", "Confirmed", "Preparing", "Ready", "Out for Delivery", "Delivered", "Cancelled"]
+STATUSES = [
+    "Pending WhatsApp Submission",
+    "Received",
+    "Confirmed",
+    "Preparing",
+    "Ready",
+    "Out for Delivery",
+    "Delivered",
+    "Cancelled",
+]
 
 
 def protected(fn):
@@ -41,7 +51,13 @@ def protected(fn):
         if time.time() - session.get("auth_time", 0) > 3600:
             session.clear()
             return redirect(url_for("admin.login"))
-        if user["role"] != "admin" and request.endpoint not in ("admin.dashboard", "admin.orders", "admin.notify", "admin.logout"):
+        if user["role"] != "admin" and request.endpoint not in (
+            "admin.dashboard",
+            "admin.orders",
+            "admin.order_detail",
+            "admin.notify",
+            "admin.logout",
+        ):
             abort(403)
         return fn(*a, **kw)
 
@@ -128,67 +144,162 @@ def logout():
 @protected
 def dashboard():
     conn = db()
-    stats = dict(
-        today=conn.execute(
-            "SELECT count(*) FROM orders WHERE date(created)=date('now')"
-        ).fetchone()[0],
-        month=conn.execute(
-            "SELECT count(*) FROM orders WHERE strftime('%Y-%m',created)=strftime('%Y-%m','now')"
-        ).fetchone()[0],
-        pending=conn.execute(
-            "SELECT count(*) FROM orders WHERE status NOT IN ('Delivered','Cancelled')"
-        ).fetchone()[0],
-    )
-    for status in STATUSES:
-        stats[status] = conn.execute("SELECT count(*) FROM orders WHERE status=?",(status,)).fetchone()[0]
-    revenue = conn.execute(
-        "SELECT currency,sum(subtotal) total FROM orders WHERE status='Delivered' GROUP BY currency"
-    ).fetchall()
-    sales = {}
-    category_sales = {}
-    for order in conn.execute(
-        "SELECT items,currency FROM orders WHERE status='Delivered'"
-    ):
-        for item in json.loads(order["items"]):
-            key = (
-                item["name"],
-                item["label"],
-                item["kind"],
-                item.get("category_name", str(item.get("category", ""))),
-                order["currency"],
-            )
-            value = sales.setdefault(key, {"qty": 0, "total": 0})
-            value["qty"] += item["qty"]
-            value["total"] += item["total"]
-            category_key = (
-                item.get("category_name", str(item.get("category") or "Uncategorized")),
-                order["currency"],
-            )
-            category_sales[category_key] = (
-                category_sales.get(category_key, 0) + item["total"]
-            )
+    stats = {
+        row["status"]: row["n"]
+        for row in conn.execute("SELECT status,count(*) n FROM orders GROUP BY status")
+    }
+    stats["today"] = conn.execute(
+        "SELECT count(*) FROM orders WHERE date(created)=date('now')"
+    ).fetchone()[0]
+    attention_sql = """ FROM products p WHERE p.image='' OR p.description='' OR NOT EXISTS (SELECT 1 FROM variants v WHERE v.product_id=p.id AND v.price IS NOT NULL AND v.active=1)"""
+    stats["attention"] = conn.execute("SELECT count(*)" + attention_sql).fetchone()[0]
     return render_template(
         "admin_dashboard.html",
         stats=stats,
-        revenue=revenue,
-        category_sales=category_sales,
-        sales=dict(
-            sorted(sales.items(), key=lambda pair: pair[1]["qty"], reverse=True)
-        ),
-        inventory=conn.execute(
-            "SELECT v.*,p.name FROM variants v JOIN products p ON p.id=v.product_id WHERE stock<=5"
+        revenue=conn.execute(
+            "SELECT currency,sum(subtotal) total FROM orders WHERE status='Delivered' GROUP BY currency"
         ).fetchall(),
-        audit=conn.execute("SELECT * FROM audit ORDER BY id DESC LIMIT 30").fetchall(),
+        recent=conn.execute(
+            "SELECT * FROM orders ORDER BY id DESC LIMIT 10"
+        ).fetchall(),
+        attention=conn.execute(
+            "SELECT p.*, (SELECT count(*) FROM variants v WHERE v.product_id=p.id AND v.price IS NULL) missing_prices"
+            + attention_sql
+            + " ORDER BY p.active,p.id LIMIT 10"
+        ).fetchall(),
+        inventory=conn.execute(
+            "SELECT v.*,p.name FROM variants v JOIN products p ON p.id=v.product_id WHERE stock<=5 ORDER BY stock LIMIT 10"
+        ).fetchall(),
+        audit=conn.execute("SELECT * FROM audit ORDER BY id DESC LIMIT 8").fetchall(),
     )
 
 
+@bp.get("/drinks")
+@bp.get("/coffee")
 @bp.get("/products")
 @protected
 def products():
+    kind = (
+        "drink"
+        if request.path.endswith("/drinks")
+        else (
+            "ground"
+            if request.path.endswith("/coffee")
+            else request.args.get("kind", "")
+        )
+    )
+    clauses, args = [], []
+    if kind in ("drink", "ground"):
+        clauses.append("p.kind=?")
+        args.append(kind)
+    query = request.args.get("q", "").strip()[:100]
+    if query:
+        clauses.append("(p.name LIKE ? OR p.name_ar LIKE ?)")
+        args.extend(["%" + query + "%"] * 2)
+    status = request.args.get("status", "")
+    if status in ("draft", "published"):
+        clauses.append("p.active=?")
+        args.append(int(status == "published"))
+    category = request.args.get("category", type=int)
+    if category:
+        clauses.append("p.category_id=?")
+        args.append(category)
+    where = " WHERE " + " AND ".join(clauses) if clauses else ""
+    sort = {
+        "name": "p.name COLLATE NOCASE",
+        "category": "c.position,c.name",
+        "position": "p.position,p.id",
+        "status": "p.active,p.name",
+    }.get(request.args.get("sort"), "c.position,p.position,p.id")
+    page = max(1, request.args.get("page", 1, type=int) or 1)
+    count = db().execute("SELECT count(*) FROM products p" + where, args).fetchone()[0]
+    rows = (
+        db()
+        .execute(
+            """SELECT p.*,c.name category,
+        (SELECT count(*) FROM variants WHERE product_id=p.id) variant_count,
+        (SELECT min(price) FROM variants WHERE product_id=p.id) min_price,
+        (SELECT count(*) FROM variants WHERE product_id=p.id AND price IS NULL) missing_prices,
+        (SELECT sum(stock) FROM variants WHERE product_id=p.id) stock
+        FROM products p LEFT JOIN categories c ON c.id=p.category_id"""
+            + where
+            + " ORDER BY "
+            + sort
+            + " LIMIT 30 OFFSET ?",
+            [*args, (page - 1) * 30],
+        )
+        .fetchall()
+    )
+    items = [dict(p, issues=publication_issues(dict(p))) for p in rows]
     return render_template(
         "admin_products.html",
-        products=db().execute("SELECT * FROM products ORDER BY position,id").fetchall(),
+        products=items,
+        kind=kind,
+        page=page,
+        pages=max(1, (count + 29) // 30),
+        count=count,
+        categories=db()
+        .execute("SELECT * FROM categories ORDER BY position,name")
+        .fetchall(),
     )
+
+
+@bp.post("/products/bulk")
+@protected
+def bulk_products():
+    try:
+        ids = sorted(set(integer(x, 1) for x in request.form.getlist("ids")))
+        if not ids or len(ids) > 30:
+            raise ValueError("Select up to 30 products.")
+        action = request.form.get("action")
+        if action not in ("draft", "publish"):
+            raise ValueError("Choose draft or publish.")
+        conn = db()
+        conn.execute("BEGIN IMMEDIATE")
+        for pid in ids:
+            product = conn.execute(
+                "SELECT * FROM products WHERE id=?", (pid,)
+            ).fetchone()
+            if not product:
+                raise ValueError("Product no longer exists.")
+            if action == "publish":
+                validate_publication(product)
+            conn.execute(
+                "UPDATE products SET active=? WHERE id=?",
+                (int(action == "publish"), pid),
+            )
+        audit(f"Bulk {action}: {ids}")
+        conn.commit()
+        flash(f"Updated {len(ids)} product(s).")
+    except ValueError as e:
+        db().rollback()
+        flash(str(e))
+    return redirect(url_for("admin.products"))
+
+
+@bp.post("/products/<int:pid>/quick")
+@protected
+def quick_product(pid):
+    try:
+        conn = db()
+        conn.execute("BEGIN IMMEDIATE")
+        product = conn.execute("SELECT * FROM products WHERE id=?", (pid,)).fetchone()
+        if not product:
+            abort(404)
+        active = checked("active")
+        if active:
+            validate_publication(product)
+        conn.execute(
+            "UPDATE products SET active=?,position=? WHERE id=?",
+            (active, integer(request.form.get("position", "0")), pid),
+        )
+        audit(f"Quick product update {pid}")
+        conn.commit()
+        flash("Product saved.")
+    except ValueError as e:
+        db().rollback()
+        flash(str(e))
+    return redirect(url_for("admin.products", kind=request.form.get("kind", "")))
 
 
 @bp.route("/products/<int:pid>", methods=["GET", "POST"])
@@ -232,7 +343,9 @@ def edit_product(pid):
                 image=image_reference(text("image", 100)),
                 gallery=json.dumps(gallery),
                 temperature=temperature,
-                active=checked("active"),
+                active=int(
+                    checked("active") or request.form.get("intent") == "publish"
+                ),
                 featured=checked("featured"),
                 position=integer(request.form.get("position", "0")),
                 **{
@@ -247,6 +360,9 @@ def edit_product(pid):
                     )
                 },
             )
+            db().execute("BEGIN IMMEDIATE")
+            if fields["active"]:
+                validate_publication({**fields, "id": pid})
             if pid:
                 db().execute(
                     "UPDATE products SET "
@@ -300,19 +416,25 @@ def option(pid):
             if not label:
                 raise ValueError("Label required.")
             values = dict(
+                sku=text("sku", 100),
+                position=integer(request.form.get("position", "0")),
                 allowed_grinds=text("allowed_grinds", 1000),
                 allowed_temperatures=text("allowed_temperatures", 100),
                 label=label,
                 label_ar=text("label_ar", 100),
-                grams=integer(request.form["grams"], 1, 100000)
-                if request.form.get("grams")
-                else None,
-                price=cents(request.form["price"])
-                if request.form.get("price")
-                else None,
-                stock=integer(request.form["stock"])
-                if request.form.get("stock")
-                else None,
+                grams=(
+                    integer(request.form["grams"], 1, 100000)
+                    if request.form.get("grams")
+                    else None
+                ),
+                price=(
+                    cents(request.form["price"]) if request.form.get("price") else None
+                ),
+                stock=(
+                    integer(request.form["stock"])
+                    if request.form.get("stock")
+                    else None
+                ),
                 active=checked("active"),
             )
             table = "variants"
@@ -324,12 +446,17 @@ def option(pid):
                 name=name,
                 option_group=text("option_group", 100),
                 name_ar=text("name_ar", 100),
-                price=cents(request.form.get("price", "")),
+                price=cents(request.form["price"]) if request.form.get("price") else 0,
+                price_pending=int(not bool(request.form.get("price"))),
                 active=checked("active"),
             )
             table = "addons"
         else:
             abort(400)
+        if kind == "addon" and values["active"] and values["price_pending"]:
+            raise ValueError(
+                "Enter an explicit extra price (0 is allowed) before enabling it."
+            )
         if oid:
             db().execute(
                 "UPDATE "
@@ -350,10 +477,14 @@ def option(pid):
                 + ")",
                 (pid, *values.values()),
             )
+        product = db().execute("SELECT * FROM products WHERE id=?", (pid,)).fetchone()
+        if product["active"]:
+            validate_publication(product)
         audit("Updated " + kind + " for product " + str(pid))
         db().commit()
         flash("Option saved.")
     except ValueError as e:
+        db().rollback()
         flash(str(e))
     return redirect(url_for("admin.edit_product", pid=pid))
 
@@ -416,7 +547,14 @@ def config():
                     cents(value)
                 if key == "currency" and not re.fullmatch("[A-Z]{3}", value):
                     raise ValueError("Currency must be a three-letter code.")
-                if key in ("logo", "hero_image", "story_image", "cafe_image", "choice_drink_image", "choice_coffee_image"):
+                if key in (
+                    "logo",
+                    "hero_image",
+                    "story_image",
+                    "cafe_image",
+                    "choice_drink_image",
+                    "choice_coffee_image",
+                ):
                     image_reference(value)
                 if (
                     key
@@ -509,12 +647,13 @@ def media():
                     if img.width * img.height > 20000000:
                         raise ValueError("Image is too large.")
                     img = ImageOps.exif_transpose(img).convert("RGB")
-                    img.thumbnail((2400, 2400))
+                    img.thumbnail((1600, 1600))
                     filename = secrets.token_hex(16) + ".jpg"
                     img.save(
                         Path(current_app.config["DATA_DIR"]) / "uploads" / filename,
                         "JPEG",
-                        quality=88,
+                        quality=85,
+                        optimize=True,
                     )
                 conn.execute(
                     "INSERT INTO media(filename,title,alt) VALUES (?,?,?)",
@@ -539,9 +678,23 @@ def media():
                         "UPDATE media SET title=?,alt=? WHERE id=?",
                         (text("title", 150), text("alt", 300), mid),
                     )
+            if request.form.get("assign_product") and "upload" in request.files:
+                pid = integer(request.form["assign_product"], 1)
+                if not conn.execute(
+                    "SELECT 1 FROM products WHERE id=?", (pid,)
+                ).fetchone():
+                    raise ValueError("Product not found.")
+                conn.execute("UPDATE products SET image=? WHERE id=?", (filename, pid))
             audit("Updated media library")
             conn.commit()
             flash("Media saved.")
+            if request.form.get("assign_product"):
+                return redirect(
+                    url_for(
+                        "admin.edit_product",
+                        pid=integer(request.form["assign_product"], 1),
+                    )
+                )
         except (
             ValueError,
             UnidentifiedImageError,
@@ -599,23 +752,55 @@ def orders():
                 raise ValueError(
                     "Cancelled orders cannot be reopened. Create a new order."
                 )
-            if status in ("Confirmed", "Preparing", "Ready", "Out for Delivery", "Delivered") and not order["stock_deducted"]:
+            if (
+                status
+                in ("Confirmed", "Preparing", "Ready", "Out for Delivery", "Delivered")
+                and not order["stock_deducted"]
+            ):
                 stock_changes = []
                 for item in json.loads(order["items"]):
-                    variant = conn.execute("SELECT stock FROM variants WHERE id=?", (item["variant"],)).fetchone()
+                    variant = conn.execute(
+                        "SELECT stock FROM variants WHERE id=?", (item["variant"],)
+                    ).fetchone()
                     if not variant:
-                        raise ValueError("A product variant was removed. Review this order.")
+                        raise ValueError(
+                            "A product variant was removed. Review this order."
+                        )
                     if variant["stock"] is not None:
-                        result = conn.execute("UPDATE variants SET stock=stock-? WHERE id=? AND stock>=?", (item["qty"], item["variant"], item["qty"]))
+                        result = conn.execute(
+                            "UPDATE variants SET stock=stock-? WHERE id=? AND stock>=?",
+                            (item["qty"], item["variant"], item["qty"]),
+                        )
                         if result.rowcount != 1:
-                            raise ValueError("Insufficient stock to confirm this order.")
-                        stock_changes.append({"variant":item["variant"], "qty":item["qty"]})
-                conn.execute("UPDATE orders SET stock_deducted=1,stock_changes=? WHERE id=?", (json.dumps(stock_changes),oid))
-            if status == "Cancelled" and order["status"] != "Cancelled" and order["stock_deducted"]:
-                for item in json.loads(order["stock_changes"] if order["stock_changes"] is not None else order["items"]):
-                    conn.execute("UPDATE variants SET stock=stock+? WHERE id=? AND stock IS NOT NULL", (item["qty"],item["variant"]))
+                            raise ValueError(
+                                "Insufficient stock to confirm this order."
+                            )
+                        stock_changes.append(
+                            {"variant": item["variant"], "qty": item["qty"]}
+                        )
+                conn.execute(
+                    "UPDATE orders SET stock_deducted=1,stock_changes=? WHERE id=?",
+                    (json.dumps(stock_changes), oid),
+                )
+            if (
+                status == "Cancelled"
+                and order["status"] != "Cancelled"
+                and order["stock_deducted"]
+            ):
+                for item in json.loads(
+                    order["stock_changes"]
+                    if order["stock_changes"] is not None
+                    else order["items"]
+                ):
+                    conn.execute(
+                        "UPDATE variants SET stock=stock+? WHERE id=? AND stock IS NOT NULL",
+                        (item["qty"], item["variant"]),
+                    )
                 conn.execute("UPDATE orders SET stock_deducted=0 WHERE id=?", (oid,))
-            conn.execute("INSERT INTO order_history(order_id,status,username) VALUES (?,?,?)", (oid,status,session["username"]))
+            conn.execute(
+                "INSERT INTO order_history(order_id,status,username) VALUES (?,?,?)",
+                (oid, status, session["username"]),
+            )
             conn.execute("UPDATE orders SET status=? WHERE id=?", (status, oid))
             audit("Order " + order["reference"] + " → " + status)
             conn.commit()
@@ -624,20 +809,27 @@ def orders():
             flash(str(e))
         return redirect(url_for("admin.orders"))
     page = max(1, request.args.get("page", 1, type=int) or 1)
-    count = db().execute("SELECT count(*) FROM orders WHERE (?='' OR status=?) AND (?='' OR date(created)=?)", (request.args.get("status",""),request.args.get("status",""),request.args.get("date",""),request.args.get("date",""))).fetchone()[0]
-    rows = [
-        dict(o, lines=json.loads(o["items"]), history=db().execute("SELECT * FROM order_history WHERE order_id=? ORDER BY id", (o["id"],)).fetchall())
-        for o in db().execute(
-            "SELECT * FROM orders WHERE (?='' OR status=?) AND (?='' OR date(created)=?) ORDER BY id DESC LIMIT 50 OFFSET ?",
-            (request.args.get("status", ""), request.args.get("status", ""), request.args.get("date", ""), request.args.get("date", ""), (page - 1) * 50),
+    status = request.args.get("status", "")
+    date = request.args.get("date", "")
+    query = request.args.get("q", "")[:100]
+    where = " WHERE (?='' OR status=?) AND (?='' OR date(created)=?) AND (?='' OR reference LIKE ? OR name LIKE ? OR phone LIKE ?)"
+    args = [status, status, date, date, query, *(["%" + query + "%"] * 3)]
+    count = db().execute("SELECT count(*) FROM orders" + where, args).fetchone()[0]
+    rows = (
+        db()
+        .execute(
+            "SELECT * FROM orders" + where + " ORDER BY id DESC LIMIT 30 OFFSET ?",
+            [*args, (page - 1) * 30],
         )
-    ]
+        .fetchall()
+    )
     return render_template(
         "admin_orders.html",
         orders=rows,
         statuses=STATUSES,
         page=page,
-        pages=max(1, (count + 49) // 50),
+        pages=max(1, (count + 29) // 30),
+        count=count,
     )
 
 
@@ -730,7 +922,9 @@ def operations():
             if kind == "number":
                 phone = text("phone", 20)
                 if not re.fullmatch(r"\+[1-9][0-9]{7,14}", phone):
-                    raise ValueError("Use international format, for example +961 followed by the full number.")
+                    raise ValueError(
+                        "Use international format, for example +961 followed by the full number."
+                    )
                 label = text("label", 100)
                 if not label:
                     raise ValueError("A label is required.")
@@ -741,36 +935,83 @@ def operations():
                 if default:
                     db().execute("UPDATE whatsapp_numbers SET is_default=0")
                 if oid:
-                    db().execute("UPDATE whatsapp_numbers SET label=?,phone=?,active=?,is_default=? WHERE id=?", (label,phone,active,default,oid))
+                    db().execute(
+                        "UPDATE whatsapp_numbers SET label=?,phone=?,active=?,is_default=? WHERE id=?",
+                        (label, phone, active, default, oid),
+                    )
                 else:
-                    db().execute("INSERT INTO whatsapp_numbers(label,phone,active,is_default) VALUES (?,?,?,?)", (label,phone,active,default))
+                    db().execute(
+                        "INSERT INTO whatsapp_numbers(label,phone,active,is_default) VALUES (?,?,?,?)",
+                        (label, phone, active, default),
+                    )
             elif kind == "area":
                 name = text("name", 100)
                 if not name:
                     raise ValueError("Area name is required.")
-                values = (name,checked("active"),cents(request.form["fee"]) if request.form.get("fee") else None,cents(request.form.get("minimum", "0")),text("estimate",100),integer(request.form["whatsapp_id"],1) if request.form.get("whatsapp_id") else None)
+                values = (
+                    name,
+                    checked("active"),
+                    cents(request.form["fee"]) if request.form.get("fee") else None,
+                    cents(request.form.get("minimum", "0")),
+                    text("estimate", 100),
+                    (
+                        integer(request.form["whatsapp_id"], 1)
+                        if request.form.get("whatsapp_id")
+                        else None
+                    ),
+                )
                 if oid:
-                    db().execute("UPDATE delivery_areas SET name=?,active=?,fee=?,minimum=?,estimate=?,whatsapp_id=? WHERE id=?", (*values,oid))
+                    db().execute(
+                        "UPDATE delivery_areas SET name=?,active=?,fee=?,minimum=?,estimate=?,whatsapp_id=? WHERE id=?",
+                        (*values, oid),
+                    )
                 else:
-                    db().execute("INSERT INTO delivery_areas(name,active,fee,minimum,estimate,whatsapp_id) VALUES (?,?,?,?,?,?)", values)
+                    db().execute(
+                        "INSERT INTO delivery_areas(name,active,fee,minimum,estimate,whatsapp_id) VALUES (?,?,?,?,?,?)",
+                        values,
+                    )
             elif kind == "slot":
-                label = text("label",100)
+                label = text("label", 100)
                 if not label:
-                    raise ValueError("Slot label is required; include the date and time range.")
+                    raise ValueError(
+                        "Slot label is required; include the date and time range."
+                    )
                 if oid:
-                    db().execute("UPDATE schedule_slots SET label=?,active=? WHERE id=?", (label,checked("active"),oid))
+                    db().execute(
+                        "UPDATE schedule_slots SET label=?,active=? WHERE id=?",
+                        (label, checked("active"), oid),
+                    )
                 else:
-                    db().execute("INSERT INTO schedule_slots(label,active) VALUES (?,?)",(label,checked("active")))
+                    db().execute(
+                        "INSERT INTO schedule_slots(label,active) VALUES (?,?)",
+                        (label, checked("active")),
+                    )
             elif kind == "hours":
                 for key in ("opening", "closing"):
-                    if not re.fullmatch(r"(?:[01][0-9]|2[0-3]):[0-5][0-9]",text(key,5)):
+                    if not re.fullmatch(
+                        r"(?:[01][0-9]|2[0-3]):[0-5][0-9]", text(key, 5)
+                    ):
                         raise ValueError("Enter valid opening and closing hours.")
                 from datetime import date
-                for day in text("closures",2000).split():
+
+                for day in text("closures", 2000).split():
                     date.fromisoformat(day)
-                for key in ("ordering", "paused", "scheduled", "opening", "closing", "closures"):
-                    value = str(checked(key)) if key in ("ordering","paused","scheduled") else text(key,2000)
-                    db().execute("UPDATE settings SET value=? WHERE key=?", (value,key))
+                for key in (
+                    "ordering",
+                    "paused",
+                    "scheduled",
+                    "opening",
+                    "closing",
+                    "closures",
+                ):
+                    value = (
+                        str(checked(key))
+                        if key in ("ordering", "paused", "scheduled")
+                        else text(key, 2000)
+                    )
+                    db().execute(
+                        "UPDATE settings SET value=? WHERE key=?", (value, key)
+                    )
             else:
                 raise ValueError("Invalid settings section.")
             audit("Updated operations: " + str(kind))
@@ -780,28 +1021,40 @@ def operations():
             db().rollback()
             flash(str(e))
         return redirect(url_for("admin.operations"))
-    return render_template("admin_operations.html", numbers=db().execute("SELECT * FROM whatsapp_numbers").fetchall(), areas=db().execute("SELECT * FROM delivery_areas").fetchall(), slots=db().execute("SELECT * FROM schedule_slots").fetchall())
+    return render_template(
+        "admin_operations.html",
+        numbers=db().execute("SELECT * FROM whatsapp_numbers").fetchall(),
+        areas=db().execute("SELECT * FROM delivery_areas").fetchall(),
+        slots=db().execute("SELECT * FROM schedule_slots").fetchall(),
+    )
 
 
 @bp.get("/orders/<int:oid>/notify/<status>")
 @protected
-def notify(oid,status):
+def notify(oid, status):
     from urllib.parse import quote
-    order = db().execute("SELECT * FROM orders WHERE id=?",(oid,)).fetchone()
+
+    order = db().execute("SELECT * FROM orders WHERE id=?", (oid,)).fetchone()
     if not order or status not in STATUSES[2:-1] or order["phone"] == "[removed]":
         abort(404)
     phone = re.sub(r"\D", "", order["phone"])
     if len(phone) == 8:
         phone = "961" + phone.lstrip("0")
     message = f"Café LUX — {order['reference']}\nHello {order['name']}, your order status: {status}."
-    return redirect("https://wa.me/" + phone + "?text=" + quote(message,safe=""))
+    return redirect("https://wa.me/" + phone + "?text=" + quote(message, safe=""))
 
 
 @bp.get("/orders/<int:oid>")
 @protected
 def order_detail(oid):
-    order=db().execute("SELECT * FROM orders WHERE id=?",(oid,)).fetchone()
+    order = db().execute("SELECT * FROM orders WHERE id=?", (oid,)).fetchone()
     if not order:
         abort(404)
-    row=dict(order, lines=json.loads(order["items"]),history=db().execute("SELECT * FROM order_history WHERE order_id=? ORDER BY id",(oid,)).fetchall())
-    return render_template("admin_orders.html",orders=[row],statuses=STATUSES,page=1,pages=1)
+    row = dict(
+        order,
+        lines=json.loads(order["items"]),
+        history=db()
+        .execute("SELECT * FROM order_history WHERE order_id=? ORDER BY id", (oid,))
+        .fetchall(),
+    )
+    return render_template("admin_order_detail.html", o=row, statuses=STATUSES)

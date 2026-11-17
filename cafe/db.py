@@ -14,16 +14,33 @@ CREATE TABLE IF NOT EXISTS media(id INTEGER PRIMARY KEY, filename TEXT UNIQUE NO
 CREATE TABLE IF NOT EXISTS audit(id INTEGER PRIMARY KEY, created TEXT DEFAULT CURRENT_TIMESTAMP, username TEXT NOT NULL, action TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS login_attempts(ip TEXT PRIMARY KEY, attempts INTEGER DEFAULT 0, until REAL DEFAULT 0);
 """
+LATEST_SCHEMA = 4
+
 DEFAULTS = {
-    **{"visible_"+key: "1" for key in ("instagram","facebook","whatsapp","email","phone","address","maps","hours","map_embed")},
-    "show_choices": "1", "show_how": "1",
+    **{
+        "visible_" + key: "1"
+        for key in (
+            "instagram",
+            "facebook",
+            "whatsapp",
+            "email",
+            "phone",
+            "address",
+            "maps",
+            "hours",
+            "map_embed",
+        )
+    },
+    "show_choices": "1",
+    "show_how": "1",
     "hero_eyebrow": "THE ART OF A GOOD COFFEE",
     "choices_title": "How do you take your LUX?",
     "drinks_title": "Your next favorite, freshly made.",
     "coffee_title": "A better brew begins with the bean.",
     "story_title": "A little luxury. An everyday ritual.",
     "how_title": "Your ritual, delivered.",
-    "choice_drink_image": "", "choice_coffee_image": "",
+    "choice_drink_image": "",
+    "choice_coffee_image": "",
     "brand": "Café LUX",
     "currency": "USD",
     "headline": "A little luxury. Every day.",
@@ -84,6 +101,34 @@ def db():
 
 def init_db():
     conn = db()
+    existing = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='schema_version'"
+    ).fetchone()
+    if (
+        not existing
+        and conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+        ).fetchone()
+    ):
+        raise RuntimeError(
+            "Unrecognized database. Check the intended Café LUX data directory; no changes applied."
+        )
+    version = (
+        conn.execute("SELECT coalesce(max(version),0) FROM schema_version").fetchone()[
+            0
+        ]
+        if existing
+        else 0
+    )
+    if version > LATEST_SCHEMA:
+        raise RuntimeError(
+            "This database needs a newer Café LUX release. Refusing to downgrade."
+        )
+    if version and version < LATEST_SCHEMA:
+        from .maintenance import database_snapshot
+
+        snapshot = database_snapshot(conn, f"pre-migration-v{version}")
+        current_app.logger.info("Verified migration snapshot: %s", snapshot)
     conn.executescript(SCHEMA)
     conn.execute("INSERT OR IGNORE INTO schema_version VALUES (1)")
     if not conn.execute("SELECT 1 FROM schema_version WHERE version=2").fetchone():
@@ -92,7 +137,8 @@ def init_db():
         )
         conn.execute("INSERT INTO schema_version VALUES (2)")
     if not conn.execute("SELECT 1 FROM schema_version WHERE version=3").fetchone():
-        conn.executescript("""
+        conn.executescript(
+            """
         BEGIN IMMEDIATE;
         ALTER TABLE variants ADD COLUMN allowed_grinds TEXT DEFAULT '';
         ALTER TABLE variants ADD COLUMN allowed_temperatures TEXT DEFAULT '';
@@ -114,7 +160,30 @@ def init_db():
         UPDATE orders SET status='Received' WHERE status='New';
         INSERT INTO schema_version VALUES (3);
         COMMIT;
-        """)
+        """
+        )
+    if not conn.execute("SELECT 1 FROM schema_version WHERE version=4").fetchone():
+        conn.executescript(
+            """
+        BEGIN IMMEDIATE;
+        ALTER TABLE categories ADD COLUMN starter_key TEXT;
+        ALTER TABLE products ADD COLUMN starter_key TEXT;
+        ALTER TABLE variants ADD COLUMN starter_key TEXT;
+        ALTER TABLE variants ADD COLUMN sku TEXT DEFAULT '';
+        ALTER TABLE variants ADD COLUMN position INTEGER DEFAULT 0;
+        ALTER TABLE addons ADD COLUMN starter_key TEXT;
+        ALTER TABLE addons ADD COLUMN price_pending INTEGER NOT NULL DEFAULT 0;
+        CREATE UNIQUE INDEX categories_starter_key ON categories(starter_key) WHERE starter_key IS NOT NULL;
+        CREATE UNIQUE INDEX products_starter_key ON products(starter_key) WHERE starter_key IS NOT NULL;
+        CREATE UNIQUE INDEX variants_starter_key ON variants(starter_key) WHERE starter_key IS NOT NULL;
+        CREATE UNIQUE INDEX addons_starter_key ON addons(starter_key) WHERE starter_key IS NOT NULL;
+        CREATE INDEX products_catalog_order ON products(kind,active,category_id,position,id);
+        CREATE INDEX orders_created_status ON orders(status,created);
+        CREATE TABLE catalog_seed_log(starter_key TEXT PRIMARY KEY, product_id INTEGER, created TEXT DEFAULT CURRENT_TIMESTAMP);
+        INSERT INTO schema_version VALUES (4);
+        COMMIT;
+        """
+        )
     for key, value in DEFAULTS.items():
         conn.execute("INSERT OR IGNORE INTO settings VALUES (?,?)", (key, value))
     conn.commit()

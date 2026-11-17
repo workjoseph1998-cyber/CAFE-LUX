@@ -1,5 +1,6 @@
-"""Browser acceptance checks against a disposable synthetic database, never live data."""
+"""V2.1 browser acceptance. All accounts, prices and orders live in disposable data."""
 
+import io
 import json
 import secrets
 import sys
@@ -8,248 +9,320 @@ import threading
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from PIL import Image
 from cafe import create_app
 from cafe.db import db
-from werkzeug.serving import make_server
+from cafe.starter_catalog import seed_catalog
 from werkzeug.security import generate_password_hash
+from werkzeug.serving import make_server
 from playwright.sync_api import sync_playwright, expect
 
 ROOT = Path(__file__).resolve().parents[1]
+OUTPUT = ROOT / "screenshots" / "v2.1"
 
 
 def main():
-    with tempfile.TemporaryDirectory(prefix="lux-browser-") as data:
+    OUTPUT.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="lux21-browser-") as data:
         app = create_app(
             {"TESTING": True, "DATA_DIR": data, "SESSION_COOKIE_SECURE": False}
         )
         password = secrets.token_urlsafe(24)
         with app.app_context():
+            seed_catalog()
             conn = db()
             conn.execute(
                 "INSERT INTO users(username,password) VALUES (?,?)",
-                ("screenshot-admin", generate_password_hash(password)),
+                ("synthetic-admin", generate_password_hash(password)),
             )
             conn.execute(
-                "UPDATE settings SET value='TEST PREVIEW · Synthetic catalog and test prices · Not real offers' WHERE key='banner'"
+                "UPDATE settings SET value='SYNTHETIC TEST PREVIEW · Not real offers' WHERE key='banner'"
             )
             conn.execute(
-                "UPDATE settings SET value='1' WHERE key IN ('ordering','delivery')"
+                "INSERT INTO whatsapp_numbers(label,phone,is_default) VALUES ('Synthetic test receiver','+96171111111',1)"
             )
-            for category, kind, names in [
-                (
-                    "Coffee drinks",
-                    "drink",
-                    ["Signature Latte", "Espresso", "Mocha", "Cold Brew"],
-                ),
-                (
-                    "Packaged coffee",
-                    "ground",
-                    ["House Blend", "Arabic Coffee", "Espresso Blend", "Single Origin"],
-                ),
-            ]:
-                cid = conn.execute(
-                    "INSERT INTO categories(name) VALUES (?)", (category,)
-                ).lastrowid
-                for name in names:
-                    pid = conn.execute(
-                        "INSERT INTO products(name,name_ar,description,description_ar,kind,category_id,active,featured,grinds,temperature) VALUES (?,?,?,?,?,?,1,1,?,?)",
-                        (
-                            "TEST " + name,
-                            "قهوة تجريبية",
-                            "Synthetic sample for testing only. Replace this copy before publishing.",
-                            "منتج تجريبي للاختبار فقط.",
-                            kind,
-                            cid,
-                            "Whole beans,Fine,Medium" if kind == "ground" else "",
-                            "both",
-                        ),
-                    ).lastrowid
-                    for label, grams, price in (
-                        [
-                            ("100 g", 100, 211),
-                            ("200 g", 200, 397),
-                            ("250 g", 250, 499),
-                            ("500 g", 500, 899),
-                            ("1 kg", 1000, 1501),
-                            ("375 g", 375, 701),
-                        ]
-                        if kind == "ground"
-                        else [("Regular", None, 375), ("Large", None, 610)]
-                    ):
-                        conn.execute(
-                            "INSERT INTO variants(product_id,label,label_ar,grams,price,stock) VALUES (?,?,?,?,?,25)",
-                            (pid, label, "حجم تجريبي", grams, price),
-                        )
-                    if kind == "drink":
-                        conn.execute(
-                            "INSERT INTO addons(product_id,name,price) VALUES (?,?,125)",
-                            (pid, "TEST extra shot"),
-                        )
-            conn.execute("INSERT INTO whatsapp_numbers(label,phone,is_default) VALUES ('Synthetic receiver','+96171123456',1)")
-            conn.execute("INSERT INTO delivery_areas(name,fee) VALUES ('Synthetic test area',250)")
+            conn.execute(
+                "INSERT INTO delivery_areas(name,fee) VALUES ('Synthetic area',250)"
+            )
+            for n in range(24):
+                status = [
+                    "Pending WhatsApp Submission",
+                    "Received",
+                    "Confirmed",
+                    "Preparing",
+                    "Ready",
+                    "Out for Delivery",
+                    "Delivered",
+                ][n % 7]
+                items = [
+                    dict(
+                        variant=1,
+                        product=1,
+                        name="Synthetic test coffee",
+                        label="Single serving",
+                        grind="",
+                        temperature="hot",
+                        addons=[],
+                        qty=1,
+                        unit=375,
+                        total=375,
+                    )
+                ]
+                conn.execute(
+                    "INSERT INTO orders(reference,token,status,name,phone,address,fulfillment,currency,subtotal,delivery,total,items,area,receiving_phone,stock_deducted) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,0)",
+                    (
+                        f"SYNTHETIC-{n+1:04d}",
+                        secrets.token_urlsafe(20),
+                        status,
+                        f"Synthetic Customer {n+1}",
+                        "+96171111111",
+                        "Fictional test street / test building",
+                        "delivery",
+                        "USD",
+                        375,
+                        250,
+                        625,
+                        json.dumps(items),
+                        "Synthetic area",
+                        "+96171111111",
+                    ),
+                )
             conn.commit()
+            espresso = dict(
+                conn.execute("SELECT * FROM products WHERE name='Espresso'").fetchone()
+            )
+            variant = dict(
+                conn.execute(
+                    "SELECT * FROM variants WHERE product_id=?", (espresso["id"],)
+                ).fetchone()
+            )
         server = make_server("127.0.0.1", 0, app, threaded=True)
-        port = server.server_port
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
-        output = ROOT / "screenshots"
-        output.mkdir(exist_ok=True)
-        (output / "browser-report.json").unlink(missing_ok=True)
+        base = f"http://127.0.0.1:{server.server_port}"
         errors = []
         checks = []
-        with sync_playwright() as p:
-            browser = p.chromium.launch(
-                executable_path="/usr/bin/chromium",
-                headless=True,
-                args=["--no-sandbox"],
-            )
-            context = browser.new_context(
-                viewport={"width": 1440, "height": 1000}, reduced_motion="reduce"
-            )
-            page = context.new_page()
-            page.on("pageerror", lambda e: errors.append(str(e)))
+        measurements = []
+        try:
+            with sync_playwright() as playwright:
+                browser = playwright.chromium.launch(
+                    executable_path="/usr/bin/chromium",
+                    headless=True,
+                    args=["--no-sandbox"],
+                )
+                context = browser.new_context(
+                    viewport={"width": 1366, "height": 768}, reduced_motion="reduce"
+                )
+                page = context.new_page()
+                page.on("pageerror", lambda e: errors.append(str(e)))
+                page.on("dialog", lambda d: d.accept())
 
-            def goto(path):
-                response = page.goto(f"http://127.0.0.1:{port}" + path)
-                assert response.status == 200, (path, response.status)
+                def goto(path):
+                    response = page.goto(base + path)
+                    assert response.status == 200, (path, response.status)
+                    page.wait_for_load_state("networkidle")
+                    assert page.locator("body").evaluate(
+                        "(e)=>e.scrollWidth<=innerWidth"
+                    ), (path + " body overflow")
+
+                def shot(name, full=False):
+                    page.screenshot(path=str(OUTPUT / (name + ".png")), full_page=full)
+
+                goto("/")
+                assert "Double Espresso" not in page.locator("main").inner_text()
+                shot("storefront-desktop", True)
+                page.set_viewport_size({"width": 390, "height": 844})
+                goto("/")
+                shot("storefront-mobile", True)
+                goto("/drinks")
+                expect(page.locator("main")).to_contain_text(
+                    "Our collection is being prepared."
+                )
+                goto("/coffee")
+                expect(page.locator("main")).to_contain_text(
+                    "Our collection is being prepared."
+                )
+                checks.append(
+                    "Draft catalog hidden from home, drinks and coffee; public design retained"
+                )
+                page.set_viewport_size({"width": 1366, "height": 768})
+                goto("/admin/login")
+                page.fill("[name=username]", "synthetic-admin")
+                page.fill("[name=password]", password)
+                page.get_by_role("button", name="Sign in").click()
+                page.wait_for_url("**/admin/")
+                for width, height in [(1366, 768), (1440, 900), (1920, 1080)]:
+                    page.set_viewport_size({"width": width, "height": height})
+                    for path, name in [
+                        ("/admin/", "dashboard"),
+                        ("/admin/drinks", "drinks-table"),
+                        ("/admin/coffee", "coffee-table"),
+                        ("/admin/products/" + str(espresso["id"]), "product-editor"),
+                        ("/admin/orders", "orders-table"),
+                    ]:
+                        goto(path)
+                        shot(f"{name}-{width}")
+                        if "table" in name:
+                            visible = page.locator("tbody>tr").evaluate_all(
+                                "(rows)=>rows.filter(r=>{const b=r.getBoundingClientRect();return b.top>=0&&b.bottom<=innerHeight;}).length"
+                            )
+                            measurements.append(
+                                {
+                                    "viewport": f"{width}x{height}",
+                                    "page": path,
+                                    "visible_rows": visible,
+                                }
+                            )
+                            assert visible >= 4, (path, width, visible)
+                            assert all(
+                                page.locator("thead th").nth(i).is_visible()
+                                for i in range(page.locator("thead th").count())
+                            )
+                checks.append(
+                    "Dashboard, product/editor and order tables at 1366x768,1440x900,1920x1080; columns accessible"
+                )
+                page.set_viewport_size({"width": 1366, "height": 768})
+                goto("/admin/drinks")
+                page.get_by_role("button", name="Toggle sidebar").click()
+                expect(page.locator("#admin-layout")).to_have_class(
+                    "admin-layout is-collapsed"
+                )
+                page.reload()
+                expect(page.locator("#admin-layout")).to_have_class(
+                    "admin-layout is-collapsed"
+                )
+                assert page.locator('.admin-sidebar a[title="Drinks"]').is_visible()
+                shot("sidebar-collapsed-1366")
+                page.select_option("#table-density", "comfortable")
+                page.reload()
+                assert (
+                    page.locator("body").get_attribute("data-density") == "comfortable"
+                )
+                page.select_option("#table-density", "compact")
+                page.get_by_role("button", name="Toggle sidebar").click()
+                checks.append(
+                    "Sidebar collapse/expand, icon tooltips and density preferences survive reload"
+                )
+                page.fill("[name=q]", "Iced")
+                page.select_option("[name=status]", "draft")
+                page.get_by_role("button", name="Apply", exact=True).click()
+                expect(page.locator("tbody")).to_contain_text("Iced Mocha")
+                assert "Cappuccino" not in page.locator("tbody").inner_text()
+                page.locator("#select-all").check()
+                expect(page.locator("#selected-count")).to_contain_text("4 selected")
+                page.get_by_role("button", name="Apply to selection").click()
+                page.wait_for_url("**/admin/products")
+                expect(page.locator(".flash")).to_contain_text("Updated 4 product(s).")
+                checks.append(
+                    "Product search, draft filter, selection and validated bulk drafting"
+                )
+                goto("/admin/products/" + str(espresso["id"]))
+                # Unsaved-change state, then save edited review copy.
+                page.fill(
+                    "#product-editor [name=description]",
+                    "Synthetic reviewed description for browser testing only.",
+                )
+                expect(page.locator("#save-state")).to_contain_text("Unsaved changes")
+                page.get_by_role("button", name="Save product", exact=True).click()
                 page.wait_for_load_state("networkidle")
-                assert page.locator("body").evaluate(
-                    "(e)=>e.scrollWidth<=window.innerWidth"
-                ), path + " overflow"
-
-            def shot(name):
-                page.screenshot(path=str(output / (name + ".png")), full_page=True)
-
-            goto("/")
-            shot("01-home-desktop")
-            checks.append("Desktop homepage and layout")
-            page.set_viewport_size({"width": 390, "height": 844})
-            goto("/")
-            shot("02-home-mobile")
-            page.locator(".menu-toggle").click()
-            assert page.locator("#navigation").is_visible()
-            page.locator(".menu-toggle").click()
-            checks.append("Mobile navigation at 390px")
-            for width in [320, 375, 768, 1024]:
-                page.set_viewport_size({"width": width, "height": 900})
+                # Upload a synthetic image through the actual product editor.
+                page.locator("#upload-photo>summary").click()
+                image = io.BytesIO()
+                Image.new("RGB", (80, 80), "#8d5a3b").save(image, "PNG")
+                page.locator("#upload-photo [name=upload]").set_input_files(
+                    {
+                        "name": "synthetic.png",
+                        "mimeType": "image/png",
+                        "buffer": image.getvalue(),
+                    }
+                )
+                page.get_by_role("button", name="Upload & assign photo").click()
+                page.wait_for_load_state("networkidle")
+                fid = "variant-" + str(variant["id"])
+                page.fill(f'input[form="{fid}"][name=price]', "3.75")
+                page.check(f'input[form="{fid}"][name=active]')
+                page.locator("#" + fid + " button").click()
+                page.wait_for_load_state("networkidle")
+                page.get_by_role("button", name="Publish product", exact=True).click()
+                page.wait_for_load_state("networkidle")
+                expect(page.locator(".page-heading")).to_contain_text("Published")
+                checks.append(
+                    "Editor dirty-state warning, reviewed draft save, photo upload, independent variant price and valid publish"
+                )
+                goto("/drinks")
+                expect(page.locator("main")).to_contain_text("Espresso")
+                goto("/product/" + str(espresso["id"]))
+                page.select_option("[name=variant]", str(variant["id"]))
+                page.get_by_role("button", name="Add to bag").click()
+                page.wait_for_url("**/cart")
+                expect(page.locator(".cart-total")).to_contain_text("3.75")
+                checks.append(
+                    "Published starter appears only in drinks and can enter the validated cart"
+                )
+                goto("/admin/orders")
+                page.locator("[data-inspect]").first.click()
+                expect(page.locator("#order-inspector")).to_be_visible()
+                expect(page.locator("#order-panel-content")).to_contain_text(
+                    "Fictional test street"
+                )
+                shot("order-inspector-1366")
+                page.get_by_role("button", name="Close order details").click()
+                page.locator(".order-row").first.get_by_role(
+                    "link", name="Details", exact=True
+                ).click()
+                page.wait_for_load_state("networkidle")
+                page.select_option(".order-detail [name=status]", "Received")
+                page.get_by_role("button", name="Update status", exact=True).click()
+                page.wait_for_url("**/admin/orders")
+                checks.append(
+                    "Order inspector displays private details; full detail status update works without claiming WhatsApp delivery"
+                )
                 for path in [
-                    "/",
-                    "/shop?kind=drink",
-                    "/product/1",
-                    "/cart",
-                    "/admin/login",
+                    "/admin/categories",
+                    "/admin/operations",
+                    "/admin/media",
+                    "/admin/settings",
+                    "/admin/users",
                 ]:
                     goto(path)
-            checks.append("No horizontal overflow at 320/375/390/768/1024/1440px")
-            page.set_viewport_size({"width": 1440, "height": 1000})
-            goto("/drinks")
-            shot("03-drinks")
-            goto("/coffee")
-            shot("04-ground-coffee")
-            goto("/product/1")
-            page.select_option("[name=variant]", "1")
-            page.check("[name=addon]")
-            page.fill("[name=qty]", "2")
-            assert page.locator("#product-total").inner_text() == "USD 10.00"
-            shot("05-product-detail")
-            page.get_by_role("button", name="Add to bag").click()
-            page.wait_for_url("**/cart")
-            goto("/product/5")
-            page.select_option("[name=variant]", "10")
-            page.select_option("[name=grind]", "Fine")
-            page.get_by_role("button", name="Add to bag").click()
-            page.wait_for_url("**/cart")
-            shot("06-cart")
-            page.set_viewport_size({"width":390,"height":844})
-            shot("06b-cart-mobile")
-            page.set_viewport_size({"width":1440,"height":1000})
-            assert "13.97" in page.locator(".cart-total").inner_text()
-            checks.append("Mixed cart: drink sizes, extras, independent coffee weight and grind, quantity and totals")
-            goto("/checkout")
-            shot("07-checkout")
-            page.set_viewport_size({"width":390,"height":844})
-            shot("07b-checkout-mobile")
-            page.set_viewport_size({"width":1440,"height":1000})
-            page.fill("[name=name]", "Synthetic Customer")
-            page.fill("[name=phone]", "+96171111111")
-            page.fill("[name=address]", "Synthetic test street")
-            page.fill("[name=building]", "Synthetic test building")
-            page.select_option("[name=area]", "1")
-            page.get_by_role("button", name="Review your order").click()
-            expect(page.locator("main")).to_contain_text("Nothing has been submitted yet.")
-            shot("13-order-review")
-            page.get_by_role("button", name="Confirm & prepare WhatsApp order").click()
-            page.wait_for_url("**/order/**")
-            expect(page.locator("main")).to_contain_text("Pending WhatsApp Submission")
-            shot("11-confirmation")
-            checks.append("Guest checkout reviewed, persisted as pending, WhatsApp URL prepared (not sent)")
-            goto("/admin/login")
-            page.fill("[name=username]", "screenshot-admin")
-            page.fill("[name=password]", password)
-            page.get_by_role("button", name="Sign in").click()
-            page.wait_for_url("**/admin/")
-            shot("08-admin-dashboard")
-            goto("/admin/products")
-            shot("09-product-management")
-            goto("/admin/orders")
-            shot("10-order-management")
-            page.select_option(".order-card select[name=status]", "Confirmed")
-            page.get_by_role("button", name="Update status").click()
-            page.wait_for_load_state("networkidle")
-            assert page.locator(".order-card select[name=status]").input_value() == "Confirmed"
-            checks.append("Admin login and order status update")
-            for path in [
-                "/admin/products/1",
-                "/admin/settings",
-                "/admin/categories",
-                "/admin/media",
-                "/admin/users",
-                "/admin/operations",
-            ]:
-                goto(path)
-            goto("/admin/operations")
-            shot("14-admin-operations")
-            page.set_viewport_size({"width": 390, "height": 844})
-            shot("15-admin-operations-mobile")
-            for path in [
-                "/admin",
-                "/admin/products/1",
-                "/admin/settings",
-                "/admin/orders",
-            ]:
-                goto(path)
-            checks.append("Admin screens at mobile width")
-            goto("/")
-            page.locator("button[name=lang]").click()
-            page.wait_for_load_state("networkidle")
-            assert page.locator("html").get_attribute("dir") == "rtl"
-            shot("12-arabic-mobile")
-            checks.append("Arabic RTL and translation fallback")
-            goto("/product/1")
-            assert page.locator("html").get_attribute("lang") == "ar"
-            # Reduced motion overrides all decorative CSS animations.
-            assert page.locator(".header").evaluate(
-                '(e)=>matchMedia("(prefers-reduced-motion: reduce)").matches'
+                goto("/admin/operations")
+                shot("operations-1366")
+                page.set_viewport_size({"width": 390, "height": 844})
+                for path in [
+                    "/admin/",
+                    "/admin/drinks",
+                    "/admin/coffee",
+                    "/admin/products/" + str(espresso["id"]),
+                    "/admin/orders",
+                    "/admin/operations",
+                ]:
+                    goto(path)
+                goto("/admin/drinks")
+                page.get_by_role("button", name="Toggle sidebar").click()
+                assert page.locator("#admin-layout").evaluate(
+                    '(e)=>e.classList.contains("menu-open")'
+                )
+                shot("admin-mobile-navigation")
+                checks.append(
+                    "Compact forms, scrollable complete tables and mobile navigation at 390px"
+                )
+                browser.close()
+            assert not errors, errors
+            report = {
+                "result": "PASS",
+                "browser": "Chromium Linux headless",
+                "data": "Disposable synthetic fixtures; all demo prices, accounts and orders discarded",
+                "checks": checks,
+                "measurements": measurements,
+                "javascript_errors": errors,
+            }
+            (OUTPUT / "browser-report.json").write_text(
+                json.dumps(report, indent=2) + "\n"
             )
-            assert (
-                page.locator(".hero-motion").count() == 0
-            )  # Product page has no hero.
-            goto("/")
-            assert page.locator(".hero-photo").evaluate("(e)=>getComputedStyle(e,'::after').animationName") == "none"
-            checks.append("Reduced motion disables decorative steam")
-            browser.close()
-        server.shutdown()
-        thread.join()
-        assert not errors, errors
-        report = {
-            "browser": "Chromium (Linux)",
-            "data": "Disposable synthetic fixtures only",
-            "checks": checks,
-            "javascript_errors": errors,
-            "result": "PASS",
-        }
-        (output / "browser-report.json").write_text(json.dumps(report, indent=2) + "\n")
-        print(json.dumps(report, indent=2))
+            print(json.dumps(report, indent=2))
+        finally:
+            server.shutdown()
+            thread.join()
 
 
 if __name__ == "__main__":

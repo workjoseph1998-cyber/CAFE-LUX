@@ -60,6 +60,7 @@ def create_app(test_config=None):
             "Invalid session key. Restore a valid key or reinitialize it offline."
         )
     app.config.update(
+        INIT_DB=True,
         SECRET_KEY=secret,
         DATA_DIR=str(data),
         DATABASE=str(data / "cafe.sqlite3"),
@@ -82,8 +83,9 @@ def create_app(test_config=None):
     if os.environ.get("CAFE_LUX_TRUST_PROXY") == "1":
         app.wsgi_app = ProxyFix(app.wsgi_app, x_for=0, x_proto=1, x_host=0)
     app.teardown_appcontext(close_db)
-    with app.app_context():
-        init_db()
+    if app.config["INIT_DB"]:
+        with app.app_context():
+            init_db()
 
     @app.before_request
     def csrf():
@@ -122,10 +124,29 @@ def create_app(test_config=None):
 
         site = settings()
         if not request.path.startswith("/admin"):
-            for key in ("instagram","facebook","whatsapp","email","phone","address","maps","hours","map_embed"):
-                if site.get("visible_"+key) != "1":
+            for key in (
+                "instagram",
+                "facebook",
+                "whatsapp",
+                "email",
+                "phone",
+                "address",
+                "maps",
+                "hours",
+                "map_embed",
+            ):
+                if site.get("visible_" + key) != "1":
                     site[key] = ""
-        current_user = db().execute("SELECT role FROM users WHERE id=? AND active=1",(session.get("user_id"),)).fetchone() if request.path.startswith("/admin") else None
+        current_user = (
+            db()
+            .execute(
+                "SELECT role FROM users WHERE id=? AND active=1",
+                (session.get("user_id"),),
+            )
+            .fetchone()
+            if request.path.startswith("/admin")
+            else None
+        )
         return dict(
             admin_role=current_user["role"] if current_user else None,
             media_alt=media_alt,
@@ -153,9 +174,12 @@ def create_app(test_config=None):
 
     @app.errorhandler(500)
     def internal(e):
-        return render_template(
-            "error.html", error="Something went wrong. Please try again."
-        ), 500
+        return (
+            render_template(
+                "error.html", error="Something went wrong. Please try again."
+            ),
+            500,
+        )
 
     from .public import bp
     from .admin import bp as admin

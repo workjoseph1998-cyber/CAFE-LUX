@@ -23,6 +23,6 @@
 <p class="filename">{{ m.filename }}</p>
 <p>Used by: {{ m.usage|join(', ') or 'Not referenced' }}</p>
 <button class="button outline">Save details</button>
-<button class="text-button" name="delete" value="1" {{ 'disabled' if m.usage }}>Delete</button>
+<button class="text-button" name="delete" value="1" data-confirm="Delete this unreferenced image permanently?" {{ 'disabled' if m.usage }}>Delete</button>
 </form>
 </article>{% else %}<p>No images uploaded.</p>{% endfor %}</div>{% endblock %}
