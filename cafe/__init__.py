@@ -147,7 +147,32 @@ def create_app(test_config=None):
             if request.path.startswith("/admin")
             else None
         )
+        availability = None
+        if not request.path.startswith("/admin"):
+            from .public import store_open, receiver
+
+            has_area = (
+                db()
+                .execute("SELECT 1 FROM delivery_areas WHERE active=1 LIMIT 1")
+                .fetchone()
+            )
+            configured = bool(receiver()) and bool(has_area)
+            if configured and site["ordering"] == "1" and site["paused"] != "1":
+                if store_open(site):
+                    availability = "Ordering is open"
+                elif (
+                    site["scheduled"] == "1"
+                    and db()
+                    .execute("SELECT 1 FROM schedule_slots WHERE active=1 LIMIT 1")
+                    .fetchone()
+                ):
+                    availability = "Scheduled orders available"
+                else:
+                    availability = "Closed for immediate orders"
+            elif site["paused"] == "1":
+                availability = "Ordering is paused"
         return dict(
+            availability=availability,
             admin_role=current_user["role"] if current_user else None,
             media_alt=media_alt,
             site=site,

@@ -1,4 +1,4 @@
-# Café LUX 2.1 administration
+# Café LUX 3.0 operations workspace
 
 Sign in at `/admin` using an existing account. On a new installation only, create one with `manage.py init-admin`. Passwords are never seeded or reset by upgrades. Administrators manage all features; order operators can only access dashboard/orders, inspect details, update statuses and prepare customer notifications. Every route rechecks permissions.
 
@@ -29,3 +29,6 @@ Initial status is **Pending WhatsApp Submission**. Customers must open WhatsApp 
 Notification links prepare messages to the actual customer's saved phone and order reference. Staff must tap Send. Opening the link neither changes status nor claims delivery.
 
 Backups/retention are in the dashboard's administrative tools section. Retention anonymizes closed orders when explicitly applied; expire backup copies separately. Backup ZIPs contain private customer data and hashes and must never enter Git or public hosting static directories.
+
+
+V3 supplies a new independent light olive/ivory operational design, overview/activity panels, breadcrumb/search header and compact tables. Sidebar/density preferences retain their existing keys. Underlying product/order/media/settings actions and all server-side permissions are unchanged. The customer Coffee Finder and recently viewed UI do not alter catalog or order records.

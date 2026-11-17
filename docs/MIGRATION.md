@@ -1,4 +1,6 @@
-# Version 2.0 → 2.1: safe migration, updates and rollback
+# Earlier catalog migration reference
+
+For Version 3.0, use **V3-UPGRADE.md**. V3 is a separate review branch, retains schema v4, and is not automatically merged or deployed. The older catalog migration steps below are only relevant when upgrading an earlier schema.
 
 The shipped V2.0 base is commit `3cd9d1e`, retained in Git history. The final catalog source is published on `main`; earlier work remains in Git history while old version branches are removed as requested. No hosting reload or Windows remote deployment is performed.
 
