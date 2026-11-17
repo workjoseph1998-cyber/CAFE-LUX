@@ -1,5 +1,12 @@
 # Changelog
 
+## Final catalog — 2.1.2
+
+- Added the owner-requested explicit action to fill missing illustrations, descriptions and editable sample prices, then publish starter products on the actual customer storefront.
+- Enabled untouched, newly priced starter options and example surcharges; preserved existing prices, availability edits, stock, accounts and order history. No store hours, delivery or WhatsApp configuration is invented.
+- Added featured starter drinks/coffee on first publication and current customer-perspective screenshots. All sample prices remain editable.
+- Retained verified full backups before catalog changes.
+
 ## 2.1.1 — 2026-11-17
 
 - Bundled 22 original sample illustrations at 480 × 400 px (236,346 bytes total; largest 11,379 bytes). No external image downloads.

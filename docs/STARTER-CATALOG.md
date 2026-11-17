@@ -62,3 +62,8 @@ Small neutral admin icons and the existing explicitly illustrative storefront fa
 ### V2.1.1 visual testing shortcut
 
 Open **Catalog preview** in admin and click **Add sample images & descriptions**. This fills missing seeded images/descriptions after a verified full backup while preserving edits and draft/pricing state. The private preview shows all approved drafts immediately without publishing. See `CATALOG-PREVIEW.md`. The original seed remains draft-only and does not assign images automatically; preparing samples is an explicit action.
+
+
+### Owner-requested sample prices and customer publication
+
+The final release additionally provides **Fill missing info & publish all with sample prices**, as explicitly requested for VM testing. It fills only missing seeded content/prices, preserves existing prices and availability edits, and publishes valid products to the actual customer pages. This is separate from the draft-only seed and from content-only preparation. See `CATALOG-PREVIEW.md`; all example amounts remain editable.

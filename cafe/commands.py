@@ -236,3 +236,18 @@ def register(app):
         click.echo(
             "Existing edits, prices, stock and publication state preserved. Open Admin → Catalog preview."
         )
+
+    @app.cli.command("publish-starter-samples")
+    @click.option("--confirm-data-dir", required=True, type=click.Path(path_type=Path))
+    def publish_starter_samples(confirm_data_dir):
+        from .catalog_test_data import prepare_and_publish_starters
+
+        data = Path(app.config["DATA_DIR"])
+        if confirm_data_dir.resolve() != data:
+            raise click.ClickException("Directory mismatch. No changes applied.")
+        result = prepare_and_publish_starters()
+        click.echo(
+            f"Published {result['published']} products; filled {result['prices']} sample variant prices and {result['images']} missing images. Backup: {result['backup']}"
+        )
+        for issue in result["skipped"]:
+            click.echo(issue)

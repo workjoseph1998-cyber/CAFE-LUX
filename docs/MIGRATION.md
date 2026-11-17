@@ -1,6 +1,6 @@
 # Version 2.0 → 2.1: safe migration, updates and rollback
 
-The shipped V2.0 base is commit `3cd9d1e`, retained in Git history. V2.1 lives on `feature/cafe-lux-v2-1-starter-catalog` for review. No default-branch merge, hosting reload or Windows remote deployment is performed by this release.
+The shipped V2.0 base is commit `3cd9d1e`, retained in Git history. The final catalog source is published on `main`; earlier work remains in Git history while old version branches are removed as requested. No hosting reload or Windows remote deployment is performed.
 
 ## Windows upgrade
 
@@ -14,7 +14,7 @@ $env:CAFE_LUX_DATA_DIR = 'C:\CafeLuxData'
 
 Keep that backup securely off the VM as well. Preserve the old release folder, runtime configuration, session key and dependencies. Do not copy any Cirrus database or storage.
 
-3. Extract `Cafe-LUX-Version-2.1.1-Catalog-Images.zip` to a **new** directory under `C:\Users\Administrator\Desktop\CafeLUX`. Open PowerShell there and keep the same `CAFE_LUX_DATA_DIR` environment value. Existing accounts/passwords, settings, orders and images are reused, not reinitialized.
+3. Extract `Cafe-LUX-Final-Catalog.zip` to a **new** directory under `C:\Users\Administrator\Desktop\CafeLUX`. Open PowerShell there and keep the same `CAFE_LUX_DATA_DIR` environment value. Existing accounts/passwords, settings, orders and images are reused, not reinitialized.
 
 ```powershell
 .\setup.bat

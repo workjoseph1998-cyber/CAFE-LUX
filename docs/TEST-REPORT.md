@@ -1,10 +1,10 @@
-# Café LUX 2.1.1 validation — 2026-11-17
+# Café LUX final catalog validation — 2026-11-17
 
 Linux development environment, Python 3.12, Flask 3.1.2, SQLite, headless Chromium. All accounts, orders, photos and prices used for checks are synthetic fixtures in temporary external directories. No business database, Windows VM or PythonAnywhere account was accessed. No WhatsApp message was sent.
 
 ## Automated application checks
 
-98 tests pass with `.venv/bin/python -m pytest -q`, including the retained V2.0 regression suite and new V2.1 cases:
+101 tests pass with `.venv/bin/python -m pytest -q`, including the retained V2.0 regression suite and new V2.1 cases:
 
 - Approved catalog: exactly four drink categories/18 drinks and four coffee categories/four packaged coffees on an empty database; 62 total independently configured variants with 200 g/500 g/1 kg package combinations. Appropriate single servings/sizes and hot/cold separation.
 - All seeded products unpublished/unfeatured; no selling prices, stock, assigned photos or fabricated origin/composition/roast/tasting facts. Extras remain pending and disabled, with explicit zero distinguished from an unreviewed numeric storage sentinel.
@@ -19,7 +19,7 @@ Linux development environment, Python 3.12, Flask 3.1.2, SQLite, headless Chromi
 
 ## Actual Chromium checks and screenshots
 
-`python scripts/capture_screenshots.py` uses an ephemeral synthetic catalog and loopback server. Report: `screenshots/v2.1/browser-report.json`. Screenshots include dashboard, drinks/coffee tables, full editor and order table at every requested laptop size, plus sidebar collapse, operations, order inspector and mobile navigation.
+`python scripts/capture_screenshots.py` uses an ephemeral synthetic catalog and loopback server. Report: `screenshots/final/browser-report.json`. Screenshots include dashboard, drinks/coffee tables, full editor and order table at every requested laptop size, plus sidebar collapse, operations, order inspector and mobile navigation.
 
 | Viewport | Fully visible drink rows | Fully visible order rows |
 |---|---:|---:|
@@ -40,4 +40,9 @@ Scheduled slots remain administrator-maintained enabled labels, not automatic ca
 
 ## V2.1.1 sample-image and description update
 
-Four additional automated tests check all 22 JPEG dimensions/file sizes, missing-fields-only preparation, verified full backup including existing media, repeat-run idempotency, preservation of owner photos/descriptions and business data, authenticated preview routes, CSRF/role enforcement through the existing guards, no publication/pricing changes and CLI directory confirmation. A private preview browser flow checks the one-click action and actual served images plus full descriptions on desktop/mobile. Current screenshots/report are under `screenshots/v2.1.1/`; V2.1 baseline captures remain under `screenshots/v2.1/`. No VM or hosted deployment was performed.
+Four additional automated tests check all 22 JPEG dimensions/file sizes, missing-fields-only preparation, verified full backup including existing media, repeat-run idempotency, preservation of owner photos/descriptions and business data, authenticated preview routes, CSRF/role enforcement through the existing guards, no publication/pricing changes and CLI directory confirmation. A private preview browser flow checks the one-click action and actual served images plus full descriptions on desktop/mobile. Current screenshots/report are under `screenshots/final/`; Older captures are retained only in Git history. No VM or hosted deployment was performed.
+
+
+## Final owner-requested sample pricing and public publication
+
+Three more tests verify that all 22 prepared starter products publish to the actual anonymous customer catalogs, homepage features appear, all 62 sample variant prices are explicit/independent, sample cart totals work, repeat runs preserve prices and metadata, existing owner prices/stock/availability/descriptions survive, and CSRF/operator restrictions remain enforced. Disabled owner variants are preserved and reported for review rather than silently enabled. Browser acceptance now publishes the prepared catalog, creates a **fresh signed-out browser context**, and captures the real homepage, Drinks and Coffee pages at desktop and mobile widths. Current captures/report are under `screenshots/final/`; older screenshot sets are removed from the active source tree and remain in Git history.

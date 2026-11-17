@@ -1,29 +1,31 @@
-# V2.1.1 — see the catalog without uploading 22 photos
+# Fill and publish the actual customer catalog
 
-The approved seed already includes starter descriptions. This update makes them visible in a private catalog preview and supplies 22 original small sample illustrations: hot drinks, iced drinks and coffee bags. Images are **480 × 400 px**, about **231 KiB total**, with each under **12 KB**. They are labeled illustrations, not actual product or owner-approved packaging photographs.
+The final release includes 22 small sample illustrations, approved starter descriptions, and editable example prices. You no longer need to enter these fields product by product to test the website.
 
-## On your existing Windows VM
+## Existing Windows installation
 
-1. Back up/stop the current application as in `MIGRATION.md`.
-2. Extract the complete V2.1.1 ZIP into a new folder. Reuse the same `CAFE_LUX_DATA_DIR` and existing administrator. Run `setup.bat`, then `start.bat`. No new schema migration beyond V2.1's schema v4 is required.
-3. Sign in and open **Admin → Catalog preview**.
-4. Click **Add sample images & descriptions** once.
+1. Back up and stop the application. Extract `Cafe-LUX-Final-Catalog.zip` into a new directory and keep the same `CAFE_LUX_DATA_DIR` and existing administrator. Run `setup.bat`, then `start.bat`. Existing V2.1 installations keep schema v4.
+2. Sign in to `/admin` and select **Catalog preview** (or **Fill & publish starter catalog** in the product table toolbar).
+3. Click **Fill missing info & publish all with sample prices**.
+4. Open `/drinks`, `/coffee` or the homepage in a signed-out browser. These are the real customer pages, not an admin-only preview. All normal untouched starter products now have images, descriptions and prices and can be added to the cart.
 
-All seeded products with missing images receive their matching small sample illustration. Missing descriptions receive the approved starter copy. Existing photos, edited descriptions, prices, stock, categories, publication settings, users and order history are retained. Rerunning does not duplicate media or overwrite edits. There is no need to seed the catalog again when it has already been added.
+The action takes a verified database/media backup, fills missing seeded fields and pending sample extra prices, enables newly priced starter variants, and publishes products that pass the normal validation. Selected newly published drinks and the four coffees are featured on the homepage. Actual checkout still needs your configured receiving WhatsApp number, delivery area and store availability; those business details are never invented.
 
-The preview displays all 18 drink drafts and four coffee drafts in the storefront's cream-and-brown layout, with full descriptions. It also works before preparation using the bundled sample thumbnails, so you can inspect immediately. It is restricted to administrators and offers no purchase button. Prices remain pending until you set them; no fake selling prices are created and drafts remain hidden publicly.
+Existing nonblank descriptions, uploaded photos, selling prices, stock and previously configured variant availability are kept. Existing users/orders and unrelated products are unchanged. If an administrator has already intentionally disabled all priced variants, or enabled an incomplete custom option, that product is left for review and its reason is shown. Repeating the action does not duplicate products/media or change existing prices.
 
-If you deliberately publish an item with a sample illustration and your own configured prices for VM testing, the image remains visibly labeled SAMPLE ILLUSTRATION. Use your actual photos and reviewed descriptions for real business offers.
+## Example prices
 
-## Optional PowerShell command instead of the button
+Amounts use the store's configured currency and are editable test values, not a currency conversion or verified selling prices. With the default USD currency, examples include Espresso $1.50, Cappuccino $2.75/$3.25/$3.75 and LUX Signature Blend whole beans $5.50/$12.00/$22.00 for 200 g/500 g/1 kg. Each size/weight/preparation has its own explicit price. Alternative milks, extra shots and syrups have editable sample surcharges; sugar/base options can be explicitly free.
 
-Run in the extracted application directory, using your actual persistent data path:
+The 22 JPEG illustrations are 480 × 400 px, 236,346 bytes combined, each under 12 KB. They remain visibly labeled SAMPLE ILLUSTRATION; owner photos are never replaced. All descriptions, prices and images can be edited later in the normal admin editor.
+
+## Optional command instead of the button
 
 ```powershell
 $env:CAFE_LUX_DATA_DIR = 'C:\CafeLuxData'
-.\.venv\Scripts\python.exe manage.py prepare-catalog-preview --confirm-data-dir "$env:CAFE_LUX_DATA_DIR"
+.\.venv\Scripts\python.exe manage.py publish-starter-samples --confirm-data-dir "$env:CAFE_LUX_DATA_DIR"
 ```
 
-The command and button perform the same operation. A verified full database/media backup is made before changes. New image filenames are stable and content-addressed; original files are never overwritten. Only products with known approved starter identities can receive this content. Fresh installations still run the explicit approved catalog seed first.
+No need to seed again if the starter catalog is already present. Fresh installations still run the explicit starter seed first. The older **Add sample images & descriptions** action remains available when you only want missing content filled without publishing or pricing.
 
-Linux/PythonAnywhere uses the same code and `python manage.py prepare-catalog-preview --confirm-data-dir "$CAFE_LUX_DATA_DIR"`. No deployment is performed.
+Windows and PythonAnywhere use the same application code. No remote deployment is performed.

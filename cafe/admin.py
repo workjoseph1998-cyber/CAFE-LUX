@@ -1112,3 +1112,20 @@ def catalog_preview():
         )
         products.append(item)
     return render_template("catalog_preview.html", products=products, kind=kind)
+
+
+@bp.post("/catalog-preview/publish")
+@protected
+def publish_starter_samples():
+    from .catalog_test_data import prepare_and_publish_starters
+
+    try:
+        result = prepare_and_publish_starters()
+        flash(
+            f"Published {result['published']} starter products to the customer website. Added {result['images']} missing images, {result['descriptions']} descriptions and {result['prices']} editable sample prices. Existing prices and content were kept."
+        )
+        for issue in result["skipped"]:
+            flash(issue)
+    except (ValueError, OSError) as error:
+        flash(str(error))
+    return redirect("/drinks")

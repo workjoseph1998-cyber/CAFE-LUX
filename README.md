@@ -1,10 +1,10 @@
-# Café LUX — Version 2.1.1
+# Café LUX — Final Catalog
 
-The existing luxury cream-and-brown mobile storefront, with an approved **draft-only starter catalog**, compact laptop administration and portable Flask WSGI hosting. Same Python/Flask/SQLite source on Windows Server and PythonAnywhere. No public deployment is performed.
+The existing luxury cream-and-brown mobile storefront, with an approved starter catalog, one-click sample pricing/publication, compact laptop administration and portable Flask WSGI hosting. Same Python/Flask/SQLite source on Windows Server and PythonAnywhere. No public deployment is performed.
 
 ## See the catalog immediately
 
-After updating, open **Admin → Catalog preview** and click **Add sample images & descriptions**. The 22 small illustrations total about 231 KiB. Existing images/descriptions are kept; missing fields are filled without publishing or inventing prices. No need to seed again if you already ran the V2.1 seed. See [preview instructions](docs/CATALOG-PREVIEW.md).
+After updating, open **Admin → Catalog preview** and click **Fill missing info & publish all with sample prices**. The 22 small illustrations total about 231 KiB. Existing images/descriptions are kept; missing fields receive sample content/prices and the approved products are published to the actual customer website. Existing prices remain unchanged. No need to seed again if you already ran the V2.1 seed. See [preview instructions](docs/CATALOG-PREVIEW.md).
 
 ## Existing Windows Server: safe upgrade first
 

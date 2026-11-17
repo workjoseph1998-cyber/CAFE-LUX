@@ -18,7 +18,7 @@ from werkzeug.serving import make_server
 from playwright.sync_api import sync_playwright, expect
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = ROOT / "screenshots" / "v2.1.1"
+OUTPUT = ROOT / "screenshots" / "final"
 
 
 def main():
@@ -336,6 +336,35 @@ def main():
                 checks.append(
                     "Compact forms, scrollable complete tables and mobile navigation at 390px"
                 )
+                page.set_viewport_size({"width": 1366, "height": 768})
+                goto("/admin/catalog-preview")
+                page.get_by_role(
+                    "button", name="Fill missing info & publish all with sample prices"
+                ).click()
+                page.wait_for_url("**/drinks")
+                guest = browser.new_context(
+                    viewport={"width": 1366, "height": 768}, reduced_motion="reduce"
+                )
+                page = guest.new_page()
+                page.on("pageerror", lambda error: errors.append(str(error)))
+                goto("/drinks")
+                expect(page.locator("main")).to_contain_text("Cappuccino")
+                assert page.locator(".product-card").count() == 18
+                shot("customer-drinks-desktop", True)
+                goto("/coffee")
+                assert page.locator(".product-card").count() == 4
+                shot("customer-coffee-desktop", True)
+                goto("/")
+                shot("customer-home-desktop", True)
+                page.set_viewport_size({"width": 390, "height": 844})
+                goto("/drinks")
+                shot("customer-drinks-mobile", True)
+                goto("/coffee")
+                shot("customer-coffee-mobile", True)
+                checks.append(
+                    "All 22 starter products published to anonymous customer catalogs with actual small images, descriptions, editable sample prices and featured homepage sections"
+                )
+
                 browser.close()
             assert not errors, errors
             report = {
