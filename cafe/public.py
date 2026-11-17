@@ -64,7 +64,7 @@ def priced_cart():
         v = (
             db()
             .execute(
-                "SELECT v.*,p.name,p.name_ar,p.kind,p.grinds,p.temperature,p.category_id,(SELECT c.name FROM categories c WHERE c.id=p.category_id) category_name,p.active product_active FROM variants v JOIN products p ON p.id=v.product_id WHERE v.id=?",
+                "SELECT v.*,p.name,p.name_ar,p.kind,p.grinds,p.temperature,p.category_id,(SELECT c.name FROM categories c WHERE c.id=p.category_id) category_name,p.image,p.active product_active FROM variants v JOIN products p ON p.id=v.product_id WHERE v.id=?",
                 (item["variant"],),
             )
             .fetchone()
@@ -125,6 +125,7 @@ def priced_cart():
         unit = v["price"] + sum(a["price"] for a in addons)
         lines.append(
             dict(
+                image=v["image"],
                 variant=v["id"],
                 grams=v["grams"],
                 sku=v["sku"],
@@ -634,3 +635,44 @@ def media(filename):
     if not db().execute("SELECT 1 FROM media WHERE filename=?", (filename,)).fetchone():
         abort(404)
     return send_from_directory(current_app.config["DATA_DIR"] + "/uploads", filename)
+
+
+@bp.get("/finder")
+def finder():
+    products = catalog()
+    kind = request.args.get("kind", "")
+    temperature = request.args.get("temperature", "")
+    roast = request.args.get("roast", "").strip()[:100]
+    if kind not in ("", "drink", "ground") or temperature not in ("", "hot", "cold"):
+        abort(400)
+    roasts = sorted(
+        {p["roast"] for p in products if p["kind"] == "ground" and p["roast"]}
+    )
+    filtered = [p for p in products if not kind or p["kind"] == kind]
+    if kind == "drink" and temperature:
+        filtered = [p for p in filtered if p["temperature"] in (temperature, "both")]
+    if kind == "ground" and roast:
+        filtered = [p for p in filtered if p["roast"] == roast]
+    return render_template(
+        "finder.html",
+        products=filtered,
+        roasts=roasts,
+        kind=kind,
+        temperature=temperature,
+        roast=roast,
+    )
+
+
+@bp.get("/recently-viewed")
+def recently_viewed():
+    raw = request.args.get("ids", "")[:100]
+    ids = []
+    for value in raw.split(","):
+        if value.isdigit() and 0 < int(value) < 100000000 and int(value) not in ids:
+            ids.append(int(value))
+        if len(ids) == 6:
+            break
+    available = {p["id"]: p for p in catalog()}
+    return render_template(
+        "_recently_viewed.html", products=[available[i] for i in ids if i in available]
+    )
