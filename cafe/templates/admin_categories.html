@@ -7,4 +7,4 @@
 </label>
 <label>Display order<input type="number" name="position" min="0" value="{{ c.position if c else 0 }}">
 </label>
-<button class="button outline">{{ 'Save' if c else 'Create category' }}</button>{% if c %}<button name="delete" value="1" class="text-button">Delete</button>{% endif %}</form>{% endfor %}<p>Deleting a category leaves its products uncategorized.</p>{% endblock %}
+<label class="check"><input type="checkbox" name="active" value="1" {{ 'checked' if not c or c.active }}>Active</label><button class="button outline">{{ 'Save' if c else 'Create category' }}</button>{% if c %}<button name="delete" value="1" class="text-button">Delete</button>{% endif %}</form>{% endfor %}<p>Deleting a category leaves its products uncategorized.</p>{% endblock %}

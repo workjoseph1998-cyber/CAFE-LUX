@@ -1,43 +1,14 @@
-{% extends 'base.html' %}{% block content %}<section class="page-intro">
-<span class="eyebrow">CAFÉ LUX / {{ tr('Cash payment only') }}</span>
-<h1>{{ tr('Checkout') }}</h1>
-</section>
-<section class="section checkout-grid">
-<form class="panel" method="post">
-<input type="hidden" name="csrf" value="{{ csrf_token }}">
-<input type="hidden" name="order_token" value="{{ order_token }}">
-<label>{{ tr('Name') }}<input name="name" autocomplete="name" maxlength="100" minlength="2" required>
-</label>
-<label>{{ tr('Phone') }}<input name="phone" type="tel" autocomplete="tel" maxlength="30" required>
-</label>
-<label>{{ tr('Fulfillment') }}<select name="fulfillment" id="fulfillment">{% for method in ['pickup','delivery'] %}{% if site[method]=='1' %}<option value="{{ method }}" data-fee="{{ site.delivery_fee if method=='delivery' else '0' }}">{{ tr(method) }} · {{ tr('Cash payment only') }}</option>{% endif %}{% endfor %}</select>
-</label>
-<label>{{ tr('Address') }}<textarea name="address" maxlength="500" autocomplete="street-address">
-</textarea>
-</label>{% if site.pickup_time=='1' %}<label>{{ tr('Requested pickup time') }}<input name="requested_time" maxlength="80">
-</label>{% endif %}<label>{{ tr('Notes') }}<textarea name="notes" maxlength="1000">
-</textarea>
-</label>{% if site.ordering=='1' %}<button class="button gold">{{ tr('Place cash order') }} →</button>{% else %}<p class="flash">{{ tr('Ordering is currently closed.') }}</p>{% endif %}<p class="fineprint">
-<a href="{{ url_for('public.page',name='privacy') }}">{{ tr('Privacy') }}</a> · <a href="{{ url_for('public.page',name='terms') }}">{{ tr('Terms') }}</a>
-</p>
-</form>
-<aside class="panel summary">
-<span class="eyebrow">{{ tr('Order summary') }}</span>{% for l in lines %}<div class="summary-line">
-<span>{{ l.qty }} × {{ l.name_ar if ar and l.name_ar else l.name }}<small>{{ l.label }} · {{ l.grind }}{% for a in l.addons %} · {{ a.name }}{% endfor %}</small>
-</span>
-<strong>{{ l.total|money }}</strong>
-</div>{% endfor %}<div class="summary-line">
-<span>{{ tr('Subtotal') }}</span>
-<span>{{ site.currency }} {{ total|money }}</span>
-</div>
-<div class="summary-line">
-<span>{{ tr('Delivery fee') }}</span>
-<span id="delivery-fee">0.00</span>
-</div>
-<div class="summary-line">
-<strong>{{ tr('Total') }}</strong>
-<strong id="checkout-total" data-subtotal="{{ total }}" data-currency="{{ site.currency }}">{{ site.currency }} {{ total|money }}</strong>
-</div>
-<p class="fineprint">{{ tr('We will confirm your order directly.') }}</p>
-</aside>
-</section>{% endblock %}
+{% extends 'base.html' %}{% block content %}
+<section class="page-intro"><span class="eyebrow">YOUR NEXT COFFEE MOMENT</span><h1>{{ tr('Delivery details') }}</h1><p>1. Your details &nbsp; / &nbsp; 2. Review &nbsp; / &nbsp; 3. WhatsApp</p></section>
+<section class="section checkout-grid"><form class="panel" method="post"><input type="hidden" name="csrf" value="{{ csrf_token }}"><input type="hidden" name="order_token" value="{{ order_token }}">
+<h2>{{ tr('A little about you') }}</h2>
+<label>{{ tr('Full name') }}<input name="name" autocomplete="name" minlength="2" maxlength="100" required></label>
+<label>{{ tr('Phone') }}<input name="phone" type="tel" autocomplete="tel" placeholder="+961" maxlength="25" required></label>
+<label>{{ tr('Delivery area') }}<select name="area" required><option value="">Choose your area</option>{% for a in areas %}<option value="{{ a.id }}">{{ a.name }} · {{ (site.currency+' '+(a.fee|money)) if a.fee is not none else 'Delivery fee to be confirmed' }}{% if a.estimate %} · {{ a.estimate }}{% endif %}</option>{% endfor %}</select></label>
+<label>{{ tr('Street / address') }}<input name="address" autocomplete="street-address" minlength="5" maxlength="350" required></label>
+<label>{{ tr('Building or landmark') }}<input name="building" maxlength="100" required></label>
+<label>{{ tr('Floor / apartment (optional)') }}<input name="floor" maxlength="50"></label>
+{% if site.scheduled=='1' %}<label>{{ tr('Delivery schedule') }}<select name="slot"><option value="">As soon as available</option>{% for s in slots %}<option value="{{ s.id }}">{{ s.label }}</option>{% endfor %}</select></label>{% endif %}
+<label>{{ tr('Delivery instructions / notes (optional)') }}<textarea name="notes" maxlength="1000"></textarea></label>
+{% if available and areas and site.ordering=='1' and site.paused!='1' and (is_open or (site.scheduled=='1' and slots)) %}<button class="button gold">{{ tr('Review your order') }} →</button>{% else %}<p class="flash">Ordering is currently unavailable. We’re getting everything ready for your next coffee moment.</p>{% endif %}
+<p class="fineprint">Cash on delivery. You will review everything before opening WhatsApp.</p></form><aside class="panel summary"><span class="eyebrow">YOUR COFFEE SELECTION</span>{% for l in lines %}<div class="summary-line"><span>{{ l.qty }} × {{ l.name }}<small>{{ l.label }} · {{ l.grind }} {{ l.temperature }}{% for a in l.addons %} · {{ a.name }}{% endfor %}</small></span><strong>{{ l.total|money }}</strong></div>{% endfor %}<div class="summary-line"><strong>Subtotal</strong><strong>{{ site.currency }} {{ total|money }}</strong></div><p>Delivery is calculated after choosing your area.</p><p class="fineprint">No account. No card details. Just good coffee.</p></aside></section>{% endblock %}

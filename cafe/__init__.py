@@ -19,6 +19,8 @@ def create_app(test_config=None):
     configured_data = (test_config or {}).get("DATA_DIR") or os.environ.get(
         "CAFE_LUX_DATA_DIR"
     )
+    if not configured_data and os.name == "nt":
+        configured_data = r"C:\CafeLuxData"
     if not configured_data:
         raise RuntimeError(
             "Set CAFE_LUX_DATA_DIR to a dedicated directory outside the application before setup or startup."
@@ -118,9 +120,16 @@ def create_app(test_config=None):
             )
             return row["alt"] if row and row["alt"] else fallback
 
+        site = settings()
+        if not request.path.startswith("/admin"):
+            for key in ("instagram","facebook","whatsapp","email","phone","address","maps","hours","map_embed"):
+                if site.get("visible_"+key) != "1":
+                    site[key] = ""
+        current_user = db().execute("SELECT role FROM users WHERE id=? AND active=1",(session.get("user_id"),)).fetchone() if request.path.startswith("/admin") else None
         return dict(
+            admin_role=current_user["role"] if current_user else None,
             media_alt=media_alt,
-            site=settings(),
+            site=site,
             ar=ar,
             tr=lambda s: WORDS.get(s, s) if ar else s,
             csrf_token=session.get("csrf", ""),

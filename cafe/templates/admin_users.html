@@ -1,14 +1,14 @@
 {% extends 'admin_base.html' %}{% block admin %}<h1>Administrators</h1>
-<p>All active administrators have full management access. Use a unique password of at least 12 characters. Password resets and disabling a user revoke their existing sessions.</p>
+<p>Administrators manage everything. Operators can only view the dashboard and manage orders. Use a unique password of at least 12 characters. Password resets and disabling a user revoke their existing sessions.</p>
 <form method="post" class="panel form-grid">
 <input type="hidden" name="csrf" value="{{ csrf_token }}">
 <label>Username<input name="username" required minlength="3" maxlength="100">
 </label>
 <label>New password<input type="password" name="password" required minlength="12" autocomplete="new-password">
 </label>
-<button class="button gold">Create / reset / enable administrator</button>
+<label>Role<select name="role"><option value="admin">Administrator</option><option value="operator">Order operator</option></select></label><button class="button gold">Create / reset / enable administrator</button>
 </form>{% for u in users %}<div class="panel inline">
-<span>{{ u.username }} · {{ 'Active' if u.active else 'Disabled' }}</span>{% if u.id!=session.user_id and u.active %}<form method="post" data-confirm="Disable this administrator?">
+<span>{{ u.username }} · {{ u.role }} · {{ 'Active' if u.active else 'Disabled' }}</span>{% if u.id!=session.user_id and u.active %}<form method="post" data-confirm="Disable this administrator?">
 <input type="hidden" name="csrf" value="{{ csrf_token }}">
 <input type="hidden" name="username" value="{{ u.username }}">
 <button class="text-button" name="disable" value="1">Disable</button>

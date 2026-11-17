@@ -4,9 +4,9 @@
 <small>{{ key.title() }} orders</small>
 <strong>{{ value }}</strong>
 </article>{% endfor %}<article class="panel">
-<small>Completed revenue only</small>{% for r in revenue %}<strong>{{ r.currency }} {{ r.total|money }}</strong>{% else %}<strong>—</strong>{% endfor %}</article>
+<small>Delivered product revenue</small>{% for r in revenue %}<strong>{{ r.currency }} {{ r.total|money }}</strong>{% else %}<strong>—</strong>{% endfor %}</article>
 </div>
-<h2>Best sellers · completed orders</h2>
+<p class="fineprint">Revenue reports product sales from delivered orders; delivery charges are excluded.</p><h2>Best sellers · delivered orders</h2>
 <p>Product, variant, type, category, currency. Pending and cancelled orders excluded.</p>
 <div class="table-wrap">
 <table>
@@ -24,11 +24,11 @@
 <td>{{ value.qty }}</td>
 <td>{{ key[4] }} {{ value.total|money }}</td>
 </tr>{% else %}<tr>
-<td colspan="4">No completed sales yet.</td>
+<td colspan="4">No delivered sales yet.</td>
 </tr>{% endfor %}</tbody>
 </table>
 </div>
-<h2>Sales by category · completed only</h2>{% for key,total in category_sales.items() %}<p>{{ key[0] }} · {{ key[1] }} {{ total|money }}</p>{% else %}<p>No completed sales.</p>{% endfor %}<h2>Inventory warnings</h2>{% for v in inventory %}<p>{{ v.name }} · {{ v.label }}: {{ v.stock }} remaining</p>{% else %}<p>No low-stock variants.</p>{% endfor %}<div class="panel">
+<h2>Sales by category · delivered only</h2>{% for key,total in category_sales.items() %}<p>{{ key[0] }} · {{ key[1] }} {{ total|money }}</p>{% else %}<p>No delivered sales.</p>{% endfor %}<h2>Inventory warnings</h2>{% for v in inventory %}<p>{{ v.name }} · {{ v.label }}: {{ v.stock }} remaining</p>{% else %}<p>No low-stock variants.</p>{% endfor %}{% if admin_role=='admin' %}<div class="panel">
 <h2>Backups & privacy</h2>
 <p>Backups contain personal data. Store securely outside the web root. Retention anonymizes closed orders older than {{ site.retention_days }} days; expire old backups separately.</p>
 <form method="post" action="{{ url_for('admin.backup') }}">
@@ -40,4 +40,4 @@
 <button class="text-button">Apply retention policy</button>
 </form>
 </div>
-<h2>Recent audit log</h2>{% for event in audit %}<p class="audit">{{ event.created }} · {{ event.username }} · {{ event.action }}</p>{% else %}<p>No events.</p>{% endfor %}{% endblock %}
+{% endif %}<h2>Recent audit log</h2>{% for event in audit %}<p class="audit">{{ event.created }} · {{ event.username }} · {{ event.action }}</p>{% else %}<p>No events.</p>{% endfor %}{% endblock %}

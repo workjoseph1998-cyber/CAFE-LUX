@@ -86,20 +86,20 @@ def test_prices_snapshot_idempotency(client, app):
     add(client, qty=2, addon="1", price="0.01")
     r = checkout(client, total="1")
     assert r.status_code == 302 and "/order/LUX-" in r.location
-    assert "Order received" in client.get(r.location).text
+    assert "Pending WhatsApp Submission" in client.get(r.location).text
     with client.session_transaction() as s:
         token = s["order_token"]
     again = post(client, "/checkout", {"order_token": token})
     assert again.location == r.location
     with app.app_context():
         o = db().execute("SELECT * FROM orders").fetchone()
-        assert o["total"] == 1000
+        assert o["total"] == 1250
         assert db().execute("SELECT count(*) FROM orders").fetchone()[0] == 1
         db().execute("UPDATE products SET name='Changed' WHERE id=1")
         db().execute("UPDATE variants SET price=9999 WHERE id=1")
         db().commit()
         assert json.loads(o["items"])[0]["name"] == "TEST Latte"
-        assert db().execute("SELECT stock FROM variants WHERE id=1").fetchone()[0] == 8
+        assert db().execute("SELECT stock FROM variants WHERE id=1").fetchone()[0] == 10
     assert client.get(r.location).headers["Cache-Control"] == "no-store"
 
 
@@ -110,12 +110,12 @@ def test_weights_independent(app, client):
     add(client, variant=4, grind="Fine")
     checkout(client)
     with app.app_context():
-        assert db().execute("SELECT total FROM orders").fetchone()[0] == 397
+        assert db().execute("SELECT total FROM orders").fetchone()[0] == 647
 
 
 def test_delivery_validation(client, app):
     add(client)
-    r = checkout(client, fulfillment="delivery", address="short")
+    r = checkout(client, fulfillment="delivery", address="x")
     assert r.location.endswith("/cart")
     with app.app_context():
         assert db().execute("SELECT count(*) FROM orders").fetchone()[0] == 0
@@ -157,7 +157,14 @@ def test_two_customers_cannot_oversell(app):
     with ThreadPoolExecutor(2) as pool:
         list(pool.map(checkout, clients))
     with app.app_context():
-        assert db().execute("SELECT count(*) FROM orders").fetchone()[0] == 1
+        assert db().execute("SELECT count(*) FROM orders").fetchone()[0] == 2
+        assert db().execute("SELECT stock FROM variants WHERE id=1").fetchone()[0] == 10
+    operator = app.test_client()
+    login(operator)
+    post(operator, "/admin/orders", {"id":1,"status":"Confirmed"})
+    post(operator, "/admin/orders", {"id":2,"status":"Confirmed"})
+    with app.app_context():
+        assert db().execute("SELECT count(*) FROM orders WHERE status='Confirmed'").fetchone()[0] == 1
         assert db().execute("SELECT stock FROM variants WHERE id=1").fetchone()[0] == 3
 
 
@@ -177,7 +184,7 @@ def test_status_and_stock_restore_once(client, app):
     post(client, "/admin/orders", {"id": 1, "status": "Cancelled"})
     with app.app_context():
         assert db().execute("SELECT stock FROM variants WHERE id=1").fetchone()[0] == 10
-    post(client, "/admin/orders", {"id": 1, "status": "Completed"})
+    post(client, "/admin/orders", {"id": 1, "status": "Delivered"})
     with app.app_context():
         assert db().execute("SELECT status FROM orders").fetchone()[0] == "Cancelled"
 
@@ -290,6 +297,7 @@ def test_backup_restore_and_migration(app, client):
     path = Path(app.config["DATA_DIR"]) / "test.zip"
     path.write_bytes(response.data)
     with app.app_context():
+        db().execute("DELETE FROM order_history")
         db().execute("DELETE FROM orders")
         db().commit()
     result = app.test_cli_runner().invoke(args=["restore", str(path), "--confirm"])
@@ -298,7 +306,7 @@ def test_backup_restore_and_migration(app, client):
     with again.app_context():
         assert db().execute("SELECT count(*) FROM orders").fetchone()[0] == 1
         assert (
-            db().execute("SELECT max(version) FROM schema_version").fetchone()[0] == 2
+            db().execute("SELECT max(version) FROM schema_version").fetchone()[0] == 3
         )
 
 
@@ -307,7 +315,7 @@ def test_retention(client, app):
     checkout(client)
     login(client)
     with app.app_context():
-        db().execute("UPDATE orders SET status='Completed',created='2000-01-01'")
+        db().execute("UPDATE orders SET status='Delivered',created='2000-01-01'")
         db().commit()
     post(client, "/admin/retention")
     with app.app_context():
@@ -348,7 +356,7 @@ def test_current_price_revalidated(client, app):
         db().commit()
     checkout(client)
     with app.app_context():
-        assert db().execute("SELECT total FROM orders").fetchone()[0] == 512
+        assert db().execute("SELECT total FROM orders").fetchone()[0] == 762
 
 
 def test_password_reset_revokes_sessions(client, app):
@@ -374,8 +382,8 @@ def test_targeted_customer_deletion(client, app):
             db().execute("SELECT name FROM orders").fetchone()[0]
             == "Synthetic Customer"
         )
-    post(client, "/admin/orders", {"id": 1, "status": "Completed"})
-    post(client, "/admin/orders", {"id": 1, "status": "Completed", "anonymize": 1})
+    post(client, "/admin/orders", {"id": 1, "status": "Delivered"})
+    post(client, "/admin/orders", {"id": 1, "status": "Delivered", "anonymize": 1})
     with app.app_context():
         assert db().execute("SELECT name FROM orders").fetchone()[0] == "[removed]"
 
@@ -405,9 +413,11 @@ def test_concurrent_duplicate_submit(app, client):
             "csrf": s["csrf"],
             "order_token": s["order_token"],
             "name": "Synthetic Customer",
-            "phone": "+000000000",
-            "fulfillment": "pickup",
+            "phone": "+96171111111",
+            "address": "Synthetic test street", "building": "Test landmark", "area": "1",
         }
+    client.post("/checkout", data=form)
+    form["confirm"] = "1"
     clones = [app.test_client(), app.test_client()]
     for c in clones:
         c.set_cookie("cafe_lux_session", client.get_cookie("cafe_lux_session").value)
@@ -417,7 +427,7 @@ def test_concurrent_duplicate_submit(app, client):
     assert responses[0].location == responses[1].location
     with app.app_context():
         assert db().execute("SELECT count(*) FROM orders").fetchone()[0] == 1
-        assert db().execute("SELECT stock FROM variants WHERE id=1").fetchone()[0] == 9
+        assert db().execute("SELECT stock FROM variants WHERE id=1").fetchone()[0] == 10
 
 
 def test_invalid_session_key_refused(tmp_path):

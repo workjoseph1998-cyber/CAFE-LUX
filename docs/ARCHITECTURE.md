@@ -1,27 +1,13 @@
 # Architecture and security
 
-Python 3.12, Flask 3.1, SQLite, Pillow and Waitress. Server-rendered Jinja templates, local CSS/JS and optimized generated editorial images. No Node build, CDN scripts, payment SDK or external database is required. No analytics/tracking scripts or third-party fonts load. Maps/social destinations load only when configured by an administrator.
+Flask server-rendered Jinja, SQLite local disk, Pillow images, minimal local CSS/JS, Waitress loopback server. No Node build, background worker, paid API, customer account or card gateway.
 
-- `cafe/__init__.py`: app factory, CSRF, cookies, Host allowlist, response headers, proxy scheme configuration.
-- `cafe/db.py`: schema v1 and additive migration v2 (session revocation version), settings, audit logging. Initialization is repeatable. Back up before upgrades.
-- `cafe/public.py`: catalog, variants, signed-session cart, locked checkout, confirmation access and public media.
-- `cafe/admin.py`: protected management, persistent login limiter, uploads, reports, retention and backups.
-- `cafe/commands.py`: first admin, drafts, database initialization, backup/restore.
-- `run.py`: dedicated listener and occupied-port guard.
-- `scripts/`: Windows setup/process ownership controls, browser acceptance and source ZIP packaging.
+`cafe/db.py` applies additive schema migrations through v3. `public.py` validates catalog choices, signs a lightweight cart cookie, prices products and areas server-side, performs final review and creates pending order snapshots under a SQLite write lock. Contact details are not stored in the cookie; only a review digest is. Unique order tokens handle repeated and concurrent submission. Availability is revalidated at checkout and stock is deducted only by authorized confirmation under a write lock.
 
-## Security controls
+`admin.py` manages catalog, media, content, operations, roles and orders. Passwords use salted Werkzeug scrypt hashes; dummy hashes cover unknown users. Active user and session-version checks run on every protected route. Operators are restricted to order operations and dashboard. Login and checkout limits persist in SQLite using the direct peer address (shared behind IIS). Mutations require CSRF, use parameterized SQL and render text with Jinja autoescaping. All public order access additionally requires the owning signed session; references alone reveal no contacts.
 
-Passwords use Werkzeug's salted scrypt hashes. A random unusable dummy hash is checked for unknown usernames to reduce timing differences; it is never an account credential. Server-side user lookups and session versions revoke disabled/reset accounts. Session IDs, CSRF values, checkout idempotency tokens, media filenames and references use cryptographic randomness. A persistent per-install key signs HttpOnly sessions. Production cookies are Secure and SameSite=Lax; no secret is committed. The signed client cookie contains catalog IDs, selected options and quantities, never customer contact details or trusted prices.
+Images are byte/pixel limited, EXIF-oriented and re-encoded to random JPEG filenames; only recorded media is served. Runtime data lives outside source and source/protected path overlaps are rejected. A per-install key, distinct HttpOnly SameSite session cookie, Host allowlist, CSP, no-sniff, anti-framing and private-page no-store headers apply. HTTPS secure cookies are the default; Windows setup explicitly configures local HTTP mode for VM testing.
 
-Every POST (including login/logout/language) requires a session CSRF token. Admin URLs check current active authorization on every request. Jinja autoescaping renders content as text. SQL values are parameterized; dynamic columns and tables are selected only from internal allowlists. HTTPS links and Google embed origins are validated. Host headers are restricted; only the scheme from one explicitly trusted local proxy can be accepted.
+Stock is not reserved by abandoned WhatsApp links. Cancellation restores confirmed stock once; confirmation cannot oversell tracked stock. Order and notification URLs never claim messages were sent. Unknown fees use a separate `fee_known` flag; the internal numeric total excludes unknown fees and is not displayed as a final payable amount.
 
-Checkout ignores submitted prices/totals. Under `BEGIN IMMEDIATE`, it re-reads product/variant/add-on prices, checks availability/stock, decrements tracked inventory, stores line snapshots and totals, and commits before showing confirmation. A unique token protects repeat submission from the same session. Tokens rotate for a new checkout. Invalid data rolls back; stock cannot go negative through concurrent checkout. Duplicate browser requests return the original order. Cart quantity, selection count, text length, upload bytes/pixels and prices are bounded.
-
-Upload filenames are random, originals never executed, metadata removed, dimensions reduced, and image contents re-encoded. Only database-listed files are served through a dedicated route. Database, keys, logs and backups live outside the repository and public static directory. A restrictive CSP, anti-framing and MIME-sniff prevention headers apply. Administrative/customer-specific pages use `Cache-Control: no-store`. Audit events omit passwords and customer addresses. Application exception logs are access-restricted operational data.
-
-## Boundaries
-
-All admins have one full-management role; there is no staff-level role or two-factor login in v1. The limiter deliberately uses the direct proxy address rather than trusting forwarded IP claims. There is no distributed denial-of-service protection. IIS must enforce HTTPS, overwriting forwarded scheme headers, network exposure, and operational access restrictions. No penetration-test certification is claimed.
-
-SQLite fits a small single-instance café workload. Use one app instance against a local persistent disk, regular backups and managed Windows permissions. Do not share the SQLite file over a network drive. Retention is an explicit admin action; offline backup expiry is an operator responsibility. This release does not implement online payments, customer accounts, tax rules, delivery-zone calculation, stock by raw bean gram, email/SMS automation or automated IIS deployment.
+Single-instance SQLite is suitable for modest traffic and local persistent disk. Backups, access permissions and manual retention remain operational responsibilities. Scheduled slots are admin-maintained availability labels, without automatic capacity or expiry. No two-factor authentication, payment processing, tax engine or automatic hosting deployment is included.

@@ -74,3 +74,38 @@ if (!reduce && "IntersectionObserver" in window) {
     observer.observe(e);
   });
 }
+
+document.querySelectorAll("form[data-submit-once]").forEach((f) =>
+  f.addEventListener("submit", () => {
+    const b = f.querySelector("button");
+    b.disabled = true;
+    b.textContent = "Preparing your order…";
+  }),
+);
+
+form?.querySelectorAll("[name=addon]").forEach((option) =>
+  option.addEventListener("change", () => {
+    if (option.checked && option.dataset.group)
+      form.querySelectorAll("[name=addon]").forEach((other) => {
+        if (other !== option && other.dataset.group === option.dataset.group)
+          other.checked = false;
+      });
+    price();
+  }),
+);
+form?.querySelector("[name=variant]")?.addEventListener("change", () => {
+  const selected = form.querySelector("[name=variant]").selectedOptions[0];
+  [
+    ["grind", "grinds"],
+    ["temperature", "temperatures"],
+  ].forEach(([field, key]) => {
+    const input = form.querySelector(`[name=${field}]`);
+    if (!input) return;
+    const allowed = selected.dataset[key]?.split(",").filter(Boolean) || [];
+    [...input.options].forEach((o) => {
+      o.disabled = allowed.length > 0 && !allowed.includes(o.value);
+    });
+    if (input.selectedOptions[0]?.disabled)
+      input.value = [...input.options].find((o) => !o.disabled)?.value || "";
+  });
+});

@@ -1,12 +1,12 @@
 . "$PSScriptRoot\common.ps1"
 Set-Location $AppRoot
-if (!$env:CAFE_LUX_ALLOWED_HOSTS) { throw 'Set CAFE_LUX_ALLOWED_HOSTS to your public hostname and 127.0.0.1 (comma separated, no scheme).' }
+if (!$env:CAFE_LUX_ALLOWED_HOSTS) { $env:CAFE_LUX_ALLOWED_HOSTS = 'localhost,127.0.0.1' }
 if (!(Test-Path $Python)) { throw 'Run setup.bat first.' }
 if (!(Test-Path (Join-Path $DataRoot 'session.key')) -or !(Test-Path (Join-Path $DataRoot 'cafe.sqlite3'))) { throw 'Missing initialized data. Run setup.bat and create an administrator.' }
 if (Get-NetTCPConnection -State Listen -LocalPort 8000 -ErrorAction SilentlyContinue) { throw 'Port 8000 is occupied. Stop your previous app yourself. Nothing was terminated.' }
 if (Test-Path $ProcessRecord) { throw 'Process record already exists. Run stop.bat or inspect docs/WINDOWS.md for stale records.' }
 $env:CAFE_LUX_TRUST_PROXY = '1'
-Remove-Item Env:CAFE_LUX_INSECURE_LOCAL -ErrorAction SilentlyContinue
+# Local HTTP mode is loaded from the dedicated runtime configuration.
 $process = Start-Process -FilePath $Python -ArgumentList 'run.py' -WorkingDirectory $AppRoot -PassThru -RedirectStandardOutput (Join-Path $DataRoot 'logs\stdout.log') -RedirectStandardError (Join-Path $DataRoot 'logs\stderr.log')
 $process.Refresh()
 @{ Id = $process.Id; Started = $process.StartTime.ToUniversalTime().ToString('o'); Python = $Python; App = $AppRoot } | ConvertTo-Json | Set-Content $ProcessRecord

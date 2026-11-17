@@ -1,6 +1,6 @@
 {% extends 'base.html' %}{% from '_cards.html' import cards with context %}{% block content %}<section class="page-intro">
 <span class="eyebrow">CAFÉ LUX / {{ tr('Shop') }}</span>
-<h1>{{ tr('Drinks' if kind=='drink' else 'Ground Coffee' if kind=='ground' else 'Discover the collection') }}</h1>
+<h1>{{ tr('Drinks' if kind=='drink' else 'Beans & Ground Coffee' if kind=='ground' else 'Discover the collection') }}</h1>
 <p>{{ tr('Choose your ritual') }}</p>
 </section>
 <section class="section catalog">

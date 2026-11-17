@@ -1,49 +1,49 @@
-# Café LUX — Premium Coffee 1.0
+# Café LUX — Version 2.0
 
-A Flask / SQLite storefront with a black-and-gold editorial design, English and Arabic RTL, guest cash ordering, and an authenticated management studio at `/admin`.
+Mobile-first, cream-and-espresso coffee storefront and protected administration. Python 3.11+, Flask, SQLite, Pillow and Waitress; no frontend build or paid messaging service.
 
-This application belongs exclusively to **workjoseph1998-cyber/CAFE-LUX**. It does not access, import, configure, stop or deploy Cirrus Workplace or another repository.
+## Windows Server 2022: local VM first
 
-## Start here
+1. Extract `Cafe-LUX-Version-2.0-Windows.zip` into a new folder under `C:\Users\Administrator\Desktop\CafeLUX`. Do not overwrite your previous release.
+2. Install Python 3.11+ with the Python launcher.
+3. Open PowerShell in the extracted application folder. Run:
 
-- [Windows Server 2022 installation, startup and rollback](docs/WINDOWS.md)
-- [Administrator guide](docs/ADMIN.md)
-- [Backup and restore](docs/BACKUPS.md)
-- [Architecture and security](docs/ARCHITECTURE.md)
-- [Test results and limitations](docs/TEST-REPORT.md)
-- [Visual assets](docs/ASSETS.md)
-- [Change log](CHANGELOG.md)
-- [Actual application screenshots](screenshots/)
-
-**No default administrator, published products, invented selling prices, address or phone number.** Ordering is disabled initially. Supply your business details, upload your artwork, create products with individually priced variants, then enable ordering. Draft example products are optional: `python -m flask --app cafe:create_app demo`. They are unpriced and unpublished.
-
-## Development (Python 3.12)
-
-Use the existing checkout; cloud tasks are already isolated. No Git worktree is necessary.
-
-```bash
-python3 -m venv /workspace/cafe-lux-venv
-/workspace/cafe-lux-venv/bin/python -m pip install -r requirements-dev.txt
-export CAFE_LUX_DATA_DIR=/workspace/cafe-lux-data
-export CAFE_LUX_INSECURE_LOCAL=1 # HTTP localhost development ONLY
-/workspace/cafe-lux-venv/bin/python -m flask --app cafe:create_app init-db
-/workspace/cafe-lux-venv/bin/python -m flask --app cafe:create_app create-admin
-/workspace/cafe-lux-venv/bin/python run.py
+```powershell
+.\setup.bat
+.\check-install.bat
+.\.venv\Scripts\python.exe manage.py init-admin
+.\start.bat
 ```
 
-The listener is always `127.0.0.1:8000`. Use HTTPS in production. `CAFE_LUX_INSECURE_LOCAL=1` disables Secure cookies for local HTTP; Windows startup explicitly removes it. Set `CAFE_LUX_ALLOWED_HOSTS` to comma-separated public hostnames plus `127.0.0.1` in production. No schemes or ports. Default: `localhost,127.0.0.1`.
+4. Visit `http://127.0.0.1:8000`, then `/admin`.
+5. Add real product images, publish products with individually priced variants, configure WhatsApp receivers and delivery areas, set store hours, then enable ordering.
+6. Configure your existing IIS hostname in `C:\CafeLuxData\runtime.json` and restart. See [Windows guide](docs/WINDOWS.md).
 
-## Validate
+`stop.bat` stops only the recorded Café LUX process. It does not modify IIS, Cirrus Workplace, or other Python processes. No public deployment is performed.
+
+## Persistent data
+
+Windows defaults to `C:\CafeLuxData`; override with `CAFE_LUX_DATA_DIR`. SQLite, uploads, logs, backups, runtime configuration and session keys stay outside source. Setup applies additive migrations and never seeds business data or resets records. Back up before any upgrade. No default password exists.
+
+## Ordering
+
+Browse `/drinks` or `/coffee` → configure products → mixed cart → delivery details → final review → save pending submission → open WhatsApp → manually tap **Send**. Cash on delivery only. Pending orders do not count as sales or deduct stock. Staff explicitly confirm receipt and status. Stock is deducted under a database lock on confirmation and restored once on cancellation.
+
+Each delivery area uses its assigned active receiver, falling back to the active default. No receiver or configured delivery area means checkout is unavailable. Unknown delivery fees never produce a claimed final payable total. Admin customer-notification links also require a manual WhatsApp Send.
+
+Admins manage products, independent weights, size-specific temperature/grind restrictions, exclusive extra groups, stock, images, content, delivery fees, time slots, closures and contact visibility. Operators have order-only management access. Prepared links are not proof of message receipt.
+
+## Development
 
 ```bash
-/workspace/cafe-lux-venv/bin/python -m pytest -q
-/workspace/cafe-lux-venv/bin/python scripts/capture_screenshots.py
+python -m venv .venv
+.venv/bin/pip install -r requirements-dev.txt
+export CAFE_LUX_DATA_DIR=/tmp/cafe-lux-local
+export CAFE_LUX_INSECURE_LOCAL=1
+.venv/bin/python manage.py init-admin
+.venv/bin/python run.py
 ```
 
-The screenshot script uses installed Chromium at `/usr/bin/chromium`, a temporary database and a random temporary admin password. All example prices and customer details are explicitly **synthetic test fixtures**, never real offers. The script checks mobile layouts, checkout and admin flows before taking screenshots. No runtime database, customer data or credentials belong in the release.
+Use a dedicated absolute data directory outside the checkout. The listener is always `127.0.0.1:8000`; debug is disabled. Tests: `.venv/bin/python -m pytest -q`. Browser checks and screenshots: `.venv/bin/python scripts/capture_screenshots.py` (Chromium at `/usr/bin/chromium`, disposable fixtures only).
 
-## Release
-
-`python scripts/build_release.py` packages the tracked application, documentation, tests and screenshots as `dist/Cafe-LUX-Version-1.0.zip`, with a SHA-256 checksum alongside it. Runtime data, Git metadata, virtual environments and secrets are excluded. The ZIP is a source release, not a preinstalled Windows virtual environment.
-
-**No deployment is automatic.** Review the Windows guide and verify IIS HTTPS on your own server before enabling public orders.
+See [administration](docs/ADMIN.md), [architecture](docs/ARCHITECTURE.md), [backups](docs/BACKUPS.md), [migration and rollback](docs/MIGRATION.md), [test report](docs/TEST-REPORT.md), and [asset notes](docs/ASSETS.md).

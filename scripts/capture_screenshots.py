@@ -85,6 +85,8 @@ def main():
                             "INSERT INTO addons(product_id,name,price) VALUES (?,?,125)",
                             (pid, "TEST extra shot"),
                         )
+            conn.execute("INSERT INTO whatsapp_numbers(label,phone,is_default) VALUES ('Synthetic receiver','+96171123456',1)")
+            conn.execute("INSERT INTO delivery_areas(name,fee) VALUES ('Synthetic test area',250)")
             conn.commit()
         server = make_server("127.0.0.1", 0, app, threaded=True)
         port = server.server_port
@@ -140,9 +142,9 @@ def main():
                     goto(path)
             checks.append("No horizontal overflow at 320/375/390/768/1024/1440px")
             page.set_viewport_size({"width": 1440, "height": 1000})
-            goto("/shop?kind=drink")
+            goto("/drinks")
             shot("03-drinks")
-            goto("/shop?kind=ground")
+            goto("/coffee")
             shot("04-ground-coffee")
             goto("/product/1")
             page.select_option("[name=variant]", "1")
@@ -152,18 +154,35 @@ def main():
             shot("05-product-detail")
             page.get_by_role("button", name="Add to bag").click()
             page.wait_for_url("**/cart")
+            goto("/product/5")
+            page.select_option("[name=variant]", "10")
+            page.select_option("[name=grind]", "Fine")
+            page.get_by_role("button", name="Add to bag").click()
+            page.wait_for_url("**/cart")
             shot("06-cart")
-            assert "10.00" in page.locator(".cart-total").inner_text()
-            checks.append("Variant, add-on, quantity and cart total")
+            page.set_viewport_size({"width":390,"height":844})
+            shot("06b-cart-mobile")
+            page.set_viewport_size({"width":1440,"height":1000})
+            assert "13.97" in page.locator(".cart-total").inner_text()
+            checks.append("Mixed cart: drink sizes, extras, independent coffee weight and grind, quantity and totals")
             goto("/checkout")
             shot("07-checkout")
+            page.set_viewport_size({"width":390,"height":844})
+            shot("07b-checkout-mobile")
+            page.set_viewport_size({"width":1440,"height":1000})
             page.fill("[name=name]", "Synthetic Customer")
-            page.fill("[name=phone]", "+000000000")
-            page.get_by_role("button", name="Place cash order").click()
+            page.fill("[name=phone]", "+96171111111")
+            page.fill("[name=address]", "Synthetic test street")
+            page.fill("[name=building]", "Synthetic test building")
+            page.select_option("[name=area]", "1")
+            page.get_by_role("button", name="Review your order").click()
+            expect(page.locator("main")).to_contain_text("Nothing has been submitted yet.")
+            shot("13-order-review")
+            page.get_by_role("button", name="Confirm & prepare WhatsApp order").click()
             page.wait_for_url("**/order/**")
-            expect(page.locator("main")).to_contain_text("Order received")
+            expect(page.locator("main")).to_contain_text("Pending WhatsApp Submission")
             shot("11-confirmation")
-            checks.append("Guest checkout persisted and confirmed")
+            checks.append("Guest checkout reviewed, persisted as pending, WhatsApp URL prepared (not sent)")
             goto("/admin/login")
             page.fill("[name=username]", "screenshot-admin")
             page.fill("[name=password]", password)
@@ -174,10 +193,10 @@ def main():
             shot("09-product-management")
             goto("/admin/orders")
             shot("10-order-management")
-            page.select_option("select[name=status]", "Completed")
+            page.select_option(".order-card select[name=status]", "Confirmed")
             page.get_by_role("button", name="Update status").click()
             page.wait_for_load_state("networkidle")
-            assert page.locator("select[name=status]").input_value() == "Completed"
+            assert page.locator(".order-card select[name=status]").input_value() == "Confirmed"
             checks.append("Admin login and order status update")
             for path in [
                 "/admin/products/1",
@@ -185,9 +204,13 @@ def main():
                 "/admin/categories",
                 "/admin/media",
                 "/admin/users",
+                "/admin/operations",
             ]:
                 goto(path)
+            goto("/admin/operations")
+            shot("14-admin-operations")
             page.set_viewport_size({"width": 390, "height": 844})
+            shot("15-admin-operations-mobile")
             for path in [
                 "/admin",
                 "/admin/products/1",
@@ -212,24 +235,8 @@ def main():
                 page.locator(".hero-motion").count() == 0
             )  # Product page has no hero.
             goto("/")
-            assert (
-                page.locator(".pour").evaluate("(e)=>getComputedStyle(e).animationName")
-                == "none"
-            )
-            motion = browser.new_context(reduced_motion="no-preference")
-            animated = motion.new_page()
-            animated.goto(f"http://127.0.0.1:{port}/")
-            animated.wait_for_timeout(250)
-            names = animated.evaluate(
-                "document.getAnimations().map(a=>a.animationName)"
-            )
-            assert all(name in names for name in ["pour", "steam", "grind", "sip"]), (
-                names
-            )
-            checks.append(
-                "Pouring, steam, bean/grinding and sipping animations run; reduced motion disables them"
-            )
-            motion.close()
+            assert page.locator(".hero-photo").evaluate("(e)=>getComputedStyle(e,'::after').animationName") == "none"
+            checks.append("Reduced motion disables decorative steam")
             browser.close()
         server.shutdown()
         thread.join()

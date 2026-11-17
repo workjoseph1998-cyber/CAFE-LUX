@@ -1,89 +1,9 @@
 {% extends 'base.html' %}{% from '_cards.html' import cards with context %}{% block content %}
-<section class="hero {% if site.hero_image %}custom-hero{% endif %}">{% if site.hero_image %}<img class="hero-background" src="{{ url_for('public.media',filename=site.hero_image) }}" alt="{{ site.brand }}">{% else %}<img class="hero-background" src="{{ url_for('static',filename='images/hero.jpg') }}" alt="Black and gold coffee cup in warm café light">{% endif %}<div class="hero-shade">
-</div>
-<div class="hero-copy">
-<span class="eyebrow">CAFÉ LUX · {{ tr('Premium coffee') }}</span>
-<h1>{{ site.headline_ar if ar and site.headline_ar else site.headline }}</h1>
-<div class="gold-rule">◆</div>
-<p>{{ site.description_ar if ar and site.description_ar else site.description }}</p>
-<div class="actions">
-<a class="button gold" href="{{ url_for('public.shop') }}">{{ tr('Shop the collection') }} <span>→</span>
-</a>
-<a class="button outline" href="{{ url_for('public.shop',kind='drink') }}">{{ tr('Explore drinks') }} <span>→</span>
-</a>
-</div>
-<div class="hero-caption">{{ site.slogan_ar if ar and site.slogan_ar else site.slogan }}</div>
-</div>
-<div class="hero-motion" aria-hidden="true">
-<svg class="pouring" viewBox="0 0 300 280">
-<defs>
-<linearGradient id="coffee">
-<stop stop-color="#e6c58a"/>
-<stop offset="1" stop-color="#5d3015"/>
-</linearGradient>
-</defs>
-<path class="pour" d="M210 5 Q200 40 170 60 Q150 85 151 165"/>
-<path class="cup" d="M80 165 H220 L207 227 Q150 255 93 227 Z"/>
-<path class="handle" d="M218 172 C270 155 265 230 209 216"/>
-<ellipse cx="150" cy="165" rx="70" ry="15"/>
-<path class="steam s1" d="M120 150 Q90 125 122 100 Q145 80 120 60"/>
-<path class="steam s2" d="M150 148 Q180 120 150 95 Q128 75 155 50"/>
-</svg>
-</div>
-<span class="hero-index">01 — THE LUX EXPERIENCE</span>
-</section>
-<div class="ritual-strip">
-<span>RICH AROMA</span>
-<i>◆</i>
-<span>SUPERIOR TASTE</span>
-<i>◆</i>
-<span>CRAFTED FOR YOUR MOMENT</span>
-<i>◆</i>
-<span>CAFÉ LUX</span>
-</div>
-{% if site.show_drinks=='1' %}<section class="collection section">
-<div class="section-heading">
-<div>
-<span class="eyebrow">01 / {{ tr('The daily ritual') }}</span>
-<h2>{{ tr('A moment, made yours.') }}</h2>
-</div>
-<a class="underlink" href="{{ url_for('public.shop',kind='drink') }}">{{ tr('Explore drinks') }} →</a>
-</div>{{ cards(drinks,ar,tr,site) }}</section>{% endif %}
-{% if site.show_ground=='1' %}<section class="ground-section section">
-<div class="section-heading">
-<div>
-<span class="eyebrow">02 / {{ tr('Ground Coffee') }}</span>
-<h2>{{ tr('Take LUX home') }}</h2>
-</div>
-<div class="grinder-art" aria-hidden="true">
-<i>◒</i>
-<i>◒</i>
-<i>◒</i>
-<span>░</span>
-</div>
-<a class="underlink" href="{{ url_for('public.shop',kind='ground') }}">{{ tr('View all') }} →</a>
-</div>{{ cards(ground,ar,tr,site) }}</section>{% endif %}
-{% if site.show_story=='1' %}<section class="story-section">
-<div class="story-visual">{% if site.story_image %}<img loading="lazy" src="{{ url_for('public.media',filename=site.story_image) }}" alt="{{ tr('Our story') }}">{% else %}<div class="sip-scene" aria-hidden="true">
-<div class="sip-cup">
-<span>LUX</span>
-<i>
-</i>
-<i>
-</i>
-</div>
-</div>{% endif %}<span class="visual-caption">Drink. Brew. Enjoy.</span>
-</div>
-<div class="story-copy reveal">
-<span class="eyebrow">03 / {{ tr('Our story') }}</span>
-<h2>{{ tr('Rich Aroma. Superior Taste.') }}</h2>
-<p>{{ site.about_ar if ar and site.about_ar else site.about }}</p>
-<a class="underlink" href="{{ url_for('public.page',name='about') }}">{{ tr('Our story') }} →</a>
-</div>
-</section>{% endif %}
-{% if site.show_location=='1' %}<section class="visit section">
-<span class="eyebrow">04 / {{ tr('Visit our café') }}</span>
-<h2>{{ tr('Choose your ritual') }}</h2>
-<p>{{ site.address or tr('Details coming soon') }}</p>{% if site.hours %}<p>{{ site.hours }}</p>{% endif %}<a class="button outline" href="{{ url_for('public.page',name='location') }}">{{ tr('Visit our café') }} →</a>
-</section>{% endif %}
+<section class="lux-hero"><div class="hero-copy"><span class="eyebrow"><span class="tiny-bean">◒</span> {{ tr(site.hero_eyebrow) }}</span><h1>{{ site.headline_ar if ar else site.headline }}</h1><p>{{ site.description_ar if ar else site.description }}</p><div class="actions"><a class="button gold" href="/drinks">{{ tr('Shop coffee drinks') }} <span>↗</span></a><a class="button outline" href="/coffee">{{ tr('Beans & blends') }} <span>↗</span></a></div><div class="hero-note"><span class="line-bean">◒</span><span>{{ tr('Your coffee. Your ritual.') }}<small>{{ tr('Prepared with care. Delivered to your door.') }}</small></span></div></div><div class="hero-photo"><img fetchpriority="high" src="{{ url_for('public.media',filename=site.hero_image) if site.hero_image else url_for('static',filename='images/hero.jpg') }}" alt="A freshly brewed coffee with rising steam"><span class="photo-label">A LITTLE LUX, EVERY DAY.</span><span class="photo-stamp">Café LUX<br><small>PREMIUM COFFEE</small></span></div></section>
+<div class="ritual-strip"><span>EXCEPTIONAL COFFEE</span><i>✦</i><span>CRAFTED TO YOUR TASTE</span><i>✦</i><span>DELIVERED WITH CARE</span><i>✦</i><span>YOUR DAILY LUX</span></div>
+{% if site.show_choices=='1' %}<section class="section ritual-choices"><div class="section-heading"><div><span class="eyebrow">FIND YOUR EVERYDAY FAVORITE</span><h2>{{ tr(site.choices_title) }}</h2></div><p>From the first sip to the last bean.<br>There’s a little luxury in every ritual.</p></div><div class="choice-grid"><a class="choice-card" href="/drinks"><img src="{{ (url_for('public.media',filename=site.choice_drink_image) if site.choice_drink_image else url_for('static',filename='images/drink.jpg')) }}" alt="Coffee drink"><div><span class="eyebrow">MADE FOR THE MOMENT</span><h3>{{ tr('Freshly crafted drinks') }}</h3><p>Hot, iced, and just the way you like it.</p><span class="underlink">{{ tr('Explore drinks') }} ↗</span></div></a><a class="choice-card coffee-choice" href="/coffee"><img src="{{ (url_for('public.media',filename=site.choice_coffee_image) if site.choice_coffee_image else url_for('static',filename='images/ground.jpg')) }}" alt="Packaged Café LUX coffee illustration"><div><span class="eyebrow">BRING THE RITUAL HOME</span><h3>{{ tr('Beans & ground coffee') }}</h3><p>Your blend. Your grind. Your perfect brew.</p><span class="underlink">{{ tr('Explore coffee') }} ↗</span></div></a></div></section>{% endif %}
+{% if site.show_drinks=='1' and drinks %}<section class="section collection"><div class="section-heading"><div><span class="eyebrow">SIP SOMETHING SPECIAL</span><h2>{{ tr(site.drinks_title) }}</h2></div><a class="underlink" href="/drinks">All drinks ↗</a></div>{{ cards(drinks,ar,tr,site) }}</section>{% endif %}
+{% if site.show_ground=='1' and ground %}<section class="section"><div class="section-heading"><div><span class="eyebrow">GOOD MORNINGS START HERE</span><h2>{{ tr(site.coffee_title) }}</h2></div><a class="underlink" href="/coffee">All coffee ↗</a></div>{{ cards(ground,ar,tr,site) }}</section>{% endif %}
+{% if site.show_story=='1' %}<section class="story-section"><div class="story-visual"><img loading="lazy" src="{{ url_for('public.media',filename=site.story_image) if site.story_image else url_for('static',filename='images/drink.jpg') }}" alt="The Café LUX coffee ritual"><span class="story-badge">Made for<br><em>your moment.</em></span></div><div class="story-copy"><span class="eyebrow">MORE THAN A DAILY CUP</span><h2>{{ tr(site.story_title) }}</h2><p>{{ site.about_ar if ar else site.about }}</p><a class="underlink" href="/page/about">{{ tr('Discover our story') }} ↗</a></div></section>{% endif %}
+{% if site.show_how=='1' %}<section class="section how-section"><span class="eyebrow">GOOD COFFEE, A FEW TAPS AWAY</span><h2>{{ tr(site.how_title) }}</h2><div class="how-grid"><article><span>01</span><h3>Find your coffee</h3><p>Choose a freshly prepared drink or a blend to brew at home.</p></article><article><span>02</span><h3>Make it yours</h3><p>Select your size, grind, extras, and delivery details.</p></article><article><span>03</span><h3>Say it on WhatsApp</h3><p>Review your order, open WhatsApp, and tap Send. Pay cash on delivery.</p></article></div><a class="button gold" href="/shop">{{ tr('Find your daily LUX') }} ↗</a></section>{% endif %}
 {% endblock %}

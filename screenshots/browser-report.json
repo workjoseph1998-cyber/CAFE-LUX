@@ -5,12 +5,12 @@
     "Desktop homepage and layout",
     "Mobile navigation at 390px",
     "No horizontal overflow at 320/375/390/768/1024/1440px",
-    "Variant, add-on, quantity and cart total",
-    "Guest checkout persisted and confirmed",
+    "Mixed cart: drink sizes, extras, independent coffee weight and grind, quantity and totals",
+    "Guest checkout reviewed, persisted as pending, WhatsApp URL prepared (not sent)",
     "Admin login and order status update",
     "Admin screens at mobile width",
     "Arabic RTL and translation fallback",
-    "Pouring, steam, bean/grinding and sipping animations run; reduced motion disables them"
+    "Reduced motion disables decorative steam"
   ],
   "javascript_errors": [],
   "result": "PASS"

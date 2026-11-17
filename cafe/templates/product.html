@@ -9,12 +9,12 @@
 <form method="post" action="{{ url_for('public.add') }}" id="product-form">
 <input type="hidden" name="csrf" value="{{ csrf_token }}">
 <label>{{ tr('Size / weight') }}<select name="variant" id="variant" required>
-<option value="" data-price="">{{ tr('Choose your ritual') }}</option>{% for v in variants %}<option value="{{ v.id }}" data-price="{{ v.price if v.price is not none else '' }}" {{ 'disabled' if v.price is none or v.stock==0 }}>{{ v.label_ar if ar and v.label_ar else v.label }} · {% if v.price is not none %}{{ site.currency }} {{ v.price|money }}{% else %}{{ tr('Price pending') }}{% endif %}{{ ' · '+tr('Unavailable') if v.stock==0 }}</option>{% endfor %}</select>
+<option value="" data-price="">{{ tr('Choose your ritual') }}</option>{% for v in variants %}<option value="{{ v.id }}" data-price="{{ v.price if v.price is not none else '' }}" data-grinds="{{ v.allowed_grinds }}" data-temperatures="{{ v.allowed_temperatures }}" {{ 'disabled' if v.price is none or v.stock==0 }}>{{ v.label_ar if ar and v.label_ar else v.label }} · {% if v.price is not none %}{{ site.currency }} {{ v.price|money }}{% else %}{{ tr('Price pending') }}{% endif %}{{ ' · '+tr('Unavailable') if v.stock==0 }}</option>{% endfor %}</select>
 </label>{% if p.grinds %}<label>{{ tr('Grind') }}<select name="grind">{% for grind in p.grinds.split(',') %}<option>{{ grind }}</option>{% endfor %}</select>
 </label>{% endif %}{% if p.kind=='drink' %}<label>{{ tr('Temperature') }}<select name="temperature">{% for temp in (['hot','cold'] if p.temperature=='both' else [p.temperature]) %}<option value="{{ temp }}">{{ tr(temp) }}</option>{% endfor %}</select>
 </label>{% endif %}{% if addons %}<fieldset>
 <legend>{{ tr('Add-ons') }}</legend>{% for a in addons %}<label class="check">
-<input type="checkbox" name="addon" value="{{ a.id }}" data-price="{{ a.price }}">{{ a.name_ar if ar and a.name_ar else a.name }} <span>+ {{ a.price|money }}</span>
+<input type="checkbox" name="addon" data-group="{{ a.option_group }}" value="{{ a.id }}" data-price="{{ a.price }}">{{ a.name_ar if ar and a.name_ar else a.name }} <span>+ {{ a.price|money }}</span>
 </label>{% endfor %}</fieldset>{% endif %}<label>{{ tr('Quantity') }}<input name="qty" type="number" value="1" min="1" max="99" required>
 </label>
 <div class="purchase-row">

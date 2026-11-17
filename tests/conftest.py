@@ -55,6 +55,8 @@ def app(tmp_path):
             "UPDATE settings SET value='1' WHERE key IN ('ordering','delivery')"
         )
         conn.execute("UPDATE settings SET value='2.50' WHERE key='delivery_fee'")
+        conn.execute("INSERT INTO whatsapp_numbers(label,phone,is_default) VALUES ('Synthetic main','+96171123456',1)")
+        conn.execute("INSERT INTO delivery_areas(name,fee) VALUES ('Synthetic area',250)")
         conn.commit()
     return app
 
@@ -91,14 +93,8 @@ def checkout(client, **kw):
     client.get("/checkout")
     with client.session_transaction() as s:
         token = s["order_token"]
-    return post(
-        client,
-        "/checkout",
-        {
-            "order_token": token,
-            "name": "Synthetic Customer",
-            "phone": "+000000000",
-            "fulfillment": "pickup",
-            **kw,
-        },
-    )
+    data = {"order_token": token, "name": "Synthetic Customer", "phone": "+96171111111", "address": "Synthetic test street", "building": "Test landmark", "area": "1", **kw}
+    response = post(client, "/checkout", data)
+    if response.status_code == 200:
+        response = post(client, "/checkout", {**data, "confirm": "1"})
+    return response

@@ -45,11 +45,9 @@ WORDS = {
     "Fulfillment": "طريقة الاستلام",
     "pickup": "استلام من المقهى",
     "delivery": "توصيل",
-    "Place cash order": "تأكيد الطلب النقدي",
     "Ordering is currently closed.": "الطلبات مغلقة حالياً.",
     "Delivery fee": "رسوم التوصيل",
     "Cash payment only": "الدفع نقداً فقط",
-    "Order received": "تم استلام الطلب",
     "We will confirm your order directly.": "سنؤكد طلبك مباشرة.",
     "Opening hours": "ساعات العمل",
     "Directions": "الاتجاهات",
@@ -80,3 +78,18 @@ WORDS.update(
         "Illustrative image": "صورة توضيحية",
     }
 )
+
+WORDS.update({
+"Your daily ritual, elevated.": "ارتقِ بطقوس قهوتك اليومية.",
+"Shop coffee drinks": "تسوّق المشروبات", "Beans & blends": "الحبوب والخلطات", "Beans & Ground Coffee": "حبوب البن والقهوة المطحونة",
+"Beans & ground coffee": "حبوب البن والقهوة المطحونة", "Coffee": "القهوة", "Cart": "السلة", "Your coffee. Your ritual.": "قهوتك. طقوسك.",
+"Prepared with care. Delivered to your door.": "محضّرة بعناية. تصلك إلى بابك.", "How do you take your LUX?": "كيف تفضّل قهوتك من لوكس؟",
+"Freshly crafted drinks": "مشروبات محضّرة بعناية", "Explore coffee": "اكتشف القهوة", "Your ritual, delivered.": "طقوس قهوتك تصلك.",
+"Make it a ritual": "اجعلها طقوسك", "Stay connected": "ابقَ على تواصل", "Coffee drinks": "مشروبات القهوة", "Discover our story": "اكتشف قصتنا",
+"Delivery details": "تفاصيل التوصيل", "Full name": "الاسم الكامل", "A little about you": "معلوماتك", "Delivery area": "منطقة التوصيل",
+"Street / address": "الشارع / العنوان", "Building or landmark": "المبنى أو علامة مميزة", "Floor / apartment (optional)": "الطابق / الشقة (اختياري)",
+"Delivery schedule": "موعد التوصيل", "Delivery instructions / notes (optional)": "تعليمات التوصيل / ملاحظات (اختياري)", "Review your order": "راجع طلبك",
+"From": "ابتداءً من", "Made to order": "يحضّر حسب الطلب", "Brew at home": "حضّرها في المنزل",
+"Our collection is being prepared.": "تشكيلتنا قيد التحضير.", "Come back soon for your next coffee moment.": "عد قريباً للحظة قهوتك القادمة.",
+"Find your daily LUX": "اكتشف قهوتك اليومية", "A little luxury.\nAn everyday ritual.": "قليل من الفخامة.\nطقوس كل يوم."
+})

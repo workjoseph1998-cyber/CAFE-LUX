@@ -32,7 +32,7 @@
 </label>
 <label>Price · {{ site.currency }}<input name="price" type="number" min="0" step="0.01" value="{{ (v.price/100) if v and v.price is not none else '' }}">
 </label>
-<label>Stock<input name="stock" type="number" min="0" value="{{ v.stock if v and v.stock is not none else '' }}">
+<label>Allowed grinds for this weight (comma-separated; blank uses product options)<input name="allowed_grinds" value="{{ v.allowed_grinds if v else '' }}"></label><label>Allowed temperatures for this size (hot,cold; blank uses product options)<input name="allowed_temperatures" value="{{ v.allowed_temperatures if v else '' }}"></label><label>Stock<input name="stock" type="number" min="0" value="{{ v.stock if v and v.stock is not none else '' }}">
 </label>
 <label class="check">
 <input name="active" type="checkbox" value="1" {{ 'checked' if not v or v.active }}>Available</label>
@@ -43,7 +43,7 @@
 <input type="hidden" name="id" value="{{ a.id if a else 0 }}">
 <label>Name<input name="name" value="{{ a.name if a else '' }}" required>
 </label>
-<label>Arabic name<input name="name_ar" value="{{ a.name_ar if a else '' }}">
+<label>Exclusive option group (e.g. Milk, Syrup, Sugar; blank allows multiple)<input name="option_group" value="{{ a.option_group if a else '' }}"></label><label>Arabic name<input name="name_ar" value="{{ a.name_ar if a else '' }}">
 </label>
 <label>Price<input name="price" type="number" min="0" step="0.01" value="{{ a.price/100 if a else '' }}" required>
 </label>

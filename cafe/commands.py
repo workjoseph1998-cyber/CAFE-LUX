@@ -40,7 +40,7 @@ def register(app):
 
     @app.cli.command("init-db")
     def init():
-        click.echo("Database schema v2 initialized; existing data retained.")
+        click.echo("Database schema v3 initialized; existing data retained.")
 
     @app.cli.command("create-admin")
     @click.option("--username", prompt=True)
@@ -108,7 +108,7 @@ def register(app):
             if (
                 conn.execute("PRAGMA integrity_check").fetchone()[0] != "ok"
                 or conn.execute("SELECT max(version) FROM schema_version").fetchone()[0]
-                != 2
+                not in (2, 3)
             ):
                 raise click.ClickException("Backup integrity/version failed.")
             conn.close()

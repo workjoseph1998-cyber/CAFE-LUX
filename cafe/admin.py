@@ -23,15 +23,7 @@ from .db import db, audit, settings, DEFAULTS
 from .public import integer, cents
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
-STATUSES = [
-    "New",
-    "Confirmed",
-    "Preparing",
-    "Ready for Pickup",
-    "Out for Delivery",
-    "Completed",
-    "Cancelled",
-]
+STATUSES = ["Pending WhatsApp Submission", "Received", "Confirmed", "Preparing", "Ready", "Out for Delivery", "Delivered", "Cancelled"]
 
 
 def protected(fn):
@@ -49,6 +41,8 @@ def protected(fn):
         if time.time() - session.get("auth_time", 0) > 3600:
             session.clear()
             return redirect(url_for("admin.login"))
+        if user["role"] != "admin" and request.endpoint not in ("admin.dashboard", "admin.orders", "admin.notify", "admin.logout"):
+            abort(403)
         return fn(*a, **kw)
 
     return wrapped
@@ -142,16 +136,18 @@ def dashboard():
             "SELECT count(*) FROM orders WHERE strftime('%Y-%m',created)=strftime('%Y-%m','now')"
         ).fetchone()[0],
         pending=conn.execute(
-            "SELECT count(*) FROM orders WHERE status NOT IN ('Completed','Cancelled')"
+            "SELECT count(*) FROM orders WHERE status NOT IN ('Delivered','Cancelled')"
         ).fetchone()[0],
     )
+    for status in STATUSES:
+        stats[status] = conn.execute("SELECT count(*) FROM orders WHERE status=?",(status,)).fetchone()[0]
     revenue = conn.execute(
-        "SELECT currency,sum(total) total FROM orders WHERE status='Completed' GROUP BY currency"
+        "SELECT currency,sum(subtotal) total FROM orders WHERE status='Delivered' GROUP BY currency"
     ).fetchall()
     sales = {}
     category_sales = {}
     for order in conn.execute(
-        "SELECT items,currency FROM orders WHERE status='Completed'"
+        "SELECT items,currency FROM orders WHERE status='Delivered'"
     ):
         for item in json.loads(order["items"]):
             key = (
@@ -304,6 +300,8 @@ def option(pid):
             if not label:
                 raise ValueError("Label required.")
             values = dict(
+                allowed_grinds=text("allowed_grinds", 1000),
+                allowed_temperatures=text("allowed_temperatures", 100),
                 label=label,
                 label_ar=text("label_ar", 100),
                 grams=integer(request.form["grams"], 1, 100000)
@@ -324,6 +322,7 @@ def option(pid):
                 raise ValueError("Name required.")
             values = dict(
                 name=name,
+                option_group=text("option_group", 100),
                 name_ar=text("name_ar", 100),
                 price=cents(request.form.get("price", "")),
                 active=checked("active"),
@@ -378,15 +377,16 @@ def categories():
                     name,
                     text("name_ar", 100),
                     integer(request.form.get("position", "0")),
+                    checked("active"),
                 )
                 if cid:
                     db().execute(
-                        "UPDATE categories SET name=?,name_ar=?,position=? WHERE id=?",
+                        "UPDATE categories SET name=?,name_ar=?,position=?,active=? WHERE id=?",
                         (*values, cid),
                     )
                 else:
                     db().execute(
-                        "INSERT INTO categories(name,name_ar,position) VALUES (?,?,?)",
+                        "INSERT INTO categories(name,name_ar,position,active) VALUES (?,?,?,?)",
                         values,
                     )
             audit("Updated categories")
@@ -416,7 +416,7 @@ def config():
                     cents(value)
                 if key == "currency" and not re.fullmatch("[A-Z]{3}", value):
                     raise ValueError("Currency must be a three-letter code.")
-                if key in ("logo", "hero_image", "story_image", "cafe_image"):
+                if key in ("logo", "hero_image", "story_image", "cafe_image", "choice_drink_image", "choice_coffee_image"):
                     image_reference(value)
                 if (
                     key
@@ -584,7 +584,7 @@ def orders():
             if not order:
                 abort(404)
             if "anonymize" in request.form:
-                if order["status"] not in ("Completed", "Cancelled"):
+                if order["status"] not in ("Delivered", "Cancelled"):
                     raise ValueError(
                         "Close the order before removing customer details."
                     )
@@ -599,12 +599,23 @@ def orders():
                 raise ValueError(
                     "Cancelled orders cannot be reopened. Create a new order."
                 )
-            if status == "Cancelled" and order["status"] != "Cancelled":
+            if status in ("Confirmed", "Preparing", "Ready", "Out for Delivery", "Delivered") and not order["stock_deducted"]:
+                stock_changes = []
                 for item in json.loads(order["items"]):
-                    conn.execute(
-                        "UPDATE variants SET stock=stock+? WHERE id=? AND stock IS NOT NULL",
-                        (item["qty"], item["variant"]),
-                    )
+                    variant = conn.execute("SELECT stock FROM variants WHERE id=?", (item["variant"],)).fetchone()
+                    if not variant:
+                        raise ValueError("A product variant was removed. Review this order.")
+                    if variant["stock"] is not None:
+                        result = conn.execute("UPDATE variants SET stock=stock-? WHERE id=? AND stock>=?", (item["qty"], item["variant"], item["qty"]))
+                        if result.rowcount != 1:
+                            raise ValueError("Insufficient stock to confirm this order.")
+                        stock_changes.append({"variant":item["variant"], "qty":item["qty"]})
+                conn.execute("UPDATE orders SET stock_deducted=1,stock_changes=? WHERE id=?", (json.dumps(stock_changes),oid))
+            if status == "Cancelled" and order["status"] != "Cancelled" and order["stock_deducted"]:
+                for item in json.loads(order["stock_changes"] if order["stock_changes"] is not None else order["items"]):
+                    conn.execute("UPDATE variants SET stock=stock+? WHERE id=? AND stock IS NOT NULL", (item["qty"],item["variant"]))
+                conn.execute("UPDATE orders SET stock_deducted=0 WHERE id=?", (oid,))
+            conn.execute("INSERT INTO order_history(order_id,status,username) VALUES (?,?,?)", (oid,status,session["username"]))
             conn.execute("UPDATE orders SET status=? WHERE id=?", (status, oid))
             audit("Order " + order["reference"] + " → " + status)
             conn.commit()
@@ -613,12 +624,12 @@ def orders():
             flash(str(e))
         return redirect(url_for("admin.orders"))
     page = max(1, request.args.get("page", 1, type=int) or 1)
-    count = db().execute("SELECT count(*) FROM orders").fetchone()[0]
+    count = db().execute("SELECT count(*) FROM orders WHERE (?='' OR status=?) AND (?='' OR date(created)=?)", (request.args.get("status",""),request.args.get("status",""),request.args.get("date",""),request.args.get("date",""))).fetchone()[0]
     rows = [
-        dict(o, lines=json.loads(o["items"]))
+        dict(o, lines=json.loads(o["items"]), history=db().execute("SELECT * FROM order_history WHERE order_id=? ORDER BY id", (o["id"],)).fetchall())
         for o in db().execute(
-            "SELECT * FROM orders ORDER BY id DESC LIMIT 50 OFFSET ?",
-            ((page - 1) * 50,),
+            "SELECT * FROM orders WHERE (?='' OR status=?) AND (?='' OR date(created)=?) ORDER BY id DESC LIMIT 50 OFFSET ?",
+            (request.args.get("status", ""), request.args.get("status", ""), request.args.get("date", ""), request.args.get("date", ""), (page - 1) * 50),
         )
     ]
     return render_template(
@@ -637,6 +648,11 @@ def users():
         try:
             username = text("username", 100)
             password = text("password", 1024)
+            role = request.form.get("role", "admin")
+            if role not in ("admin", "operator"):
+                raise ValueError("Invalid role.")
+            if username == session["username"] and role != "admin":
+                raise ValueError("You cannot remove your own administrative access.")
             if not re.fullmatch(r"[A-Za-z0-9_.-]{3,100}", username):
                 raise ValueError(
                     "Use 3–100 letters, digits, dots, dashes or underscores."
@@ -659,13 +675,13 @@ def users():
                 hashed = generate_password_hash(password)
                 if existing:
                     db().execute(
-                        "UPDATE users SET password=?,active=1,session_version=session_version+1 WHERE id=?",
-                        (hashed, existing["id"]),
+                        "UPDATE users SET password=?,role=?,active=1,session_version=session_version+1 WHERE id=?",
+                        (hashed, role, existing["id"]),
                     )
                 else:
                     db().execute(
-                        "INSERT INTO users(username,password) VALUES (?,?)",
-                        (username, hashed),
+                        "INSERT INTO users(username,password,role) VALUES (?,?,?)",
+                        (username, hashed, role),
                     )
             audit("Updated admin " + username)
             db().commit()
@@ -675,7 +691,7 @@ def users():
         return redirect(url_for("admin.users"))
     return render_template(
         "admin_users.html",
-        users=db().execute("SELECT id,username,active FROM users").fetchall(),
+        users=db().execute("SELECT id,username,active,role FROM users").fetchall(),
     )
 
 
@@ -695,10 +711,97 @@ def backup():
 def retention():
     days = integer(settings()["retention_days"], 1, 3650)
     db().execute(
-        "UPDATE orders SET name='[removed]',phone='[removed]',address='',notes='',requested_time='' WHERE status IN ('Completed','Cancelled') AND datetime(created)<datetime('now',?)",
+        "UPDATE orders SET name='[removed]',phone='[removed]',address='',notes='',requested_time='' WHERE status IN ('Delivered','Cancelled') AND datetime(created)<datetime('now',?)",
         (f"-{days} days",),
     )
     audit("Anonymized closed orders older than " + str(days) + " days")
     db().commit()
     flash("Retention policy applied. Existing backups must be expired separately.")
     return redirect(url_for("admin.dashboard"))
+
+
+@bp.route("/operations", methods=["GET", "POST"])
+@protected
+def operations():
+    if request.method == "POST":
+        try:
+            kind = request.form.get("kind")
+            oid = integer(request.form.get("id", "0"))
+            if kind == "number":
+                phone = text("phone", 20)
+                if not re.fullmatch(r"\+[1-9][0-9]{7,14}", phone):
+                    raise ValueError("Use international format, for example +961 followed by the full number.")
+                label = text("label", 100)
+                if not label:
+                    raise ValueError("A label is required.")
+                default = checked("is_default")
+                active = checked("active")
+                if default and not active:
+                    raise ValueError("The default number must be active.")
+                if default:
+                    db().execute("UPDATE whatsapp_numbers SET is_default=0")
+                if oid:
+                    db().execute("UPDATE whatsapp_numbers SET label=?,phone=?,active=?,is_default=? WHERE id=?", (label,phone,active,default,oid))
+                else:
+                    db().execute("INSERT INTO whatsapp_numbers(label,phone,active,is_default) VALUES (?,?,?,?)", (label,phone,active,default))
+            elif kind == "area":
+                name = text("name", 100)
+                if not name:
+                    raise ValueError("Area name is required.")
+                values = (name,checked("active"),cents(request.form["fee"]) if request.form.get("fee") else None,cents(request.form.get("minimum", "0")),text("estimate",100),integer(request.form["whatsapp_id"],1) if request.form.get("whatsapp_id") else None)
+                if oid:
+                    db().execute("UPDATE delivery_areas SET name=?,active=?,fee=?,minimum=?,estimate=?,whatsapp_id=? WHERE id=?", (*values,oid))
+                else:
+                    db().execute("INSERT INTO delivery_areas(name,active,fee,minimum,estimate,whatsapp_id) VALUES (?,?,?,?,?,?)", values)
+            elif kind == "slot":
+                label = text("label",100)
+                if not label:
+                    raise ValueError("Slot label is required; include the date and time range.")
+                if oid:
+                    db().execute("UPDATE schedule_slots SET label=?,active=? WHERE id=?", (label,checked("active"),oid))
+                else:
+                    db().execute("INSERT INTO schedule_slots(label,active) VALUES (?,?)",(label,checked("active")))
+            elif kind == "hours":
+                for key in ("opening", "closing"):
+                    if not re.fullmatch(r"(?:[01][0-9]|2[0-3]):[0-5][0-9]",text(key,5)):
+                        raise ValueError("Enter valid opening and closing hours.")
+                from datetime import date
+                for day in text("closures",2000).split():
+                    date.fromisoformat(day)
+                for key in ("ordering", "paused", "scheduled", "opening", "closing", "closures"):
+                    value = str(checked(key)) if key in ("ordering","paused","scheduled") else text(key,2000)
+                    db().execute("UPDATE settings SET value=? WHERE key=?", (value,key))
+            else:
+                raise ValueError("Invalid settings section.")
+            audit("Updated operations: " + str(kind))
+            db().commit()
+            flash("Settings saved.")
+        except (ValueError, __import__("sqlite3").IntegrityError) as e:
+            db().rollback()
+            flash(str(e))
+        return redirect(url_for("admin.operations"))
+    return render_template("admin_operations.html", numbers=db().execute("SELECT * FROM whatsapp_numbers").fetchall(), areas=db().execute("SELECT * FROM delivery_areas").fetchall(), slots=db().execute("SELECT * FROM schedule_slots").fetchall())
+
+
+@bp.get("/orders/<int:oid>/notify/<status>")
+@protected
+def notify(oid,status):
+    from urllib.parse import quote
+    order = db().execute("SELECT * FROM orders WHERE id=?",(oid,)).fetchone()
+    if not order or status not in STATUSES[2:-1] or order["phone"] == "[removed]":
+        abort(404)
+    phone = re.sub(r"\D", "", order["phone"])
+    if len(phone) == 8:
+        phone = "961" + phone.lstrip("0")
+    message = f"Café LUX — {order['reference']}\nHello {order['name']}, your order status: {status}."
+    return redirect("https://wa.me/" + phone + "?text=" + quote(message,safe=""))
+
+
+@bp.get("/orders/<int:oid>")
+@protected
+def order_detail(oid):
+    order=db().execute("SELECT * FROM orders WHERE id=?",(oid,)).fetchone()
+    if not order:
+        abort(404)
+    row=dict(order, lines=json.loads(order["items"]),history=db().execute("SELECT * FROM order_history WHERE order_id=? ORDER BY id",(oid,)).fetchall())
+    return render_template("admin_orders.html",orders=[row],statuses=STATUSES,page=1,pages=1)

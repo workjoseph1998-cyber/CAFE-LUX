@@ -1,46 +1,32 @@
-# Version 1.0 validation report
+# Version 2.0 validation — 2026-11-17
 
-Validated in the Linux cloud development environment on 2026-11-16 using Python 3.12, Flask 3.1, SQLite and Chromium. These are functional and regression checks, not penetration-test certification.
+Development platform: Linux, Python 3.12, Flask 3.1.2, SQLite, headless Chromium. All orders, phone numbers and test offers are fictional fixtures in temporary external data directories. No live database or VM was accessed. No WhatsApp message was sent.
 
-## Backend: 64 passed, 0 failed, 0 skipped
+## Automated application tests
 
-Command: `/workspace/cafe-lux-venv/bin/python -m pytest -q`.
+79 tests passed with `python -m pytest -q`. Coverage includes:
 
-Coverage includes public pages and navigation; product listing/details; English/Arabic RTL markup; standard and custom weights; independently configured prices; cart changes/removal; variant/add-on selection; server-side price revalidation; pickup/delivery validation and charges; ordering disabled; immutable order snapshots; session-private confirmation; sequential and concurrent idempotency; concurrent oversell prevention; stock cancellation restored once; protected admin endpoints; product creation/edit/archive; content updates and escaping; invalid external links; login throttling; account disable/reset session revocation; safe image upload, public media and reference-aware deletion; migration repeatability; live database/media backup and offline restore; malicious archive traversal refusal; retention and targeted customer anonymization; invalid currency/decimal inputs; CSRF including Unicode invalid tokens; Host checks; cookie/security headers; occupied port refusal; protected storage; missing data configuration and invalid session-key refusal.
+- Public/admin routes, CSRF, login rate limiting, password reset/session revocation, operator permissions, private order access, safe uploads and media usage protection.
+- Independent configured weights and prices, sizes, extras, mixed carts, quantity edits, out-of-stock checks, exclusive extras and per-variant grind constraints.
+- Final review before storage, price changes requiring another review, server-priced delivery fees and minimums, disabled areas, unknown delivery fees.
+- Store closed/paused behavior, active and invalid scheduled slots.
+- Pending WhatsApp orders and correctly encoded server-generated messages, routing and disabled-receiver fallback, absent receivers disabling checkout.
+- Sequential/concurrent duplicate submissions, concurrent pending orders and stock confirmation under a write lock, one-time cancellation restoration, status history, manual notification links.
+- Backup/restore, additive legacy database migration retaining products/orders, repeated initialization and persistence, malicious backup paths, WSGI factory compatibility, diagnostic import and writable directories; actual management entry point and initial-admin command.
+- Occupied-port guard, invalid prices/hosts/session keys, external data isolation and protected storage.
 
-## Browser: passed
+## Browser acceptance
 
-Command: `/workspace/cafe-lux-venv/bin/python scripts/capture_screenshots.py`.
+`python scripts/capture_screenshots.py` uses a disposable synthetic database and local loopback server. The actual generated screenshots are in `screenshots/`; the machine-readable browser report is `screenshots/browser-report.json`.
 
-See [machine-readable results](../screenshots/browser-report.json). The runner starts a real Flask application on an ephemeral loopback port using a disposable synthetic database, then runs Chromium. It checks:
+Checked desktop and mobile homepage, both catalogs, product choices/live totals, quantity/extras, cart, guest delivery details, explicit review, pending submission/WhatsApp URL, admin login/orders, status updates, catalog/content/media/operations pages, Arabic RTL and reduced-motion behavior. Viewport sweep: 320, 375, 390, 768, 1024 and 1440 pixels. No horizontal overflow or JavaScript runtime errors were found.
 
-- Desktop homepage and mobile navigation.
-- No horizontal overflow on public pages at 320, 375, 390, 768, 1024 and 1440 pixels; representative admin screens at 390 pixels.
-- Live variant/add-on/quantity pricing and cart total.
-- Guest checkout through stored order confirmation.
-- Administrator login, all main management screens and order status updates.
-- Arabic language switch, RTL and fallback text.
-- Active pouring, steam, bean/grinding and sipping CSS/SVG animations, and disabling animation under reduced motion.
-- No JavaScript page errors.
+## Release verification
 
-Twelve screenshots show the actual application: desktop/mobile home, drinks, ground coffee, details, cart, checkout, admin overview, catalog management, order management, confirmation and Arabic mobile. Every screenshot uses a prominent test-preview banner and synthetic catalog/customer fixtures. No real business prices or contact information were invented.
+Python source compilation, Git whitespace checks and ZIP integrity checks run before packaging. The release excludes databases, session keys, customer data, environments, logs and secrets. Existing generated illustrative assets are retained; actual packaging photography must be uploaded by the operator.
 
-## Runtime and packaging
+## Not tested here
 
-Waitress was started locally on `127.0.0.1:8000`; a homepage HTTP request returned 200. The CLI initialized schema v2 repeatedly without dropping data. Package dependency compatibility (`pip check`) and Python undefined/unused-name checks passed. Release ZIP integrity and runtime-file exclusions are verified during packaging. The ZIP includes source, guides, tests, assets and screenshots, not an installed Windows virtual environment or runtime database.
+Windows Server 2022, PowerShell process management, fresh/repeated installation on Windows, NTFS permissions, your existing IIS/ARR configuration, iOS Safari, Android Chrome, actual WhatsApp handoff/send/delivery and PythonAnywhere hosting were not exercised. Browser viewport checks are Chromium emulation, not real-device certification. Windows scripts were inspected and underlying Python checks run on Linux; use the VM checklist in WINDOWS.md before use. No public deployment was performed.
 
-## Not run / operator acceptance
-
-Windows Server 2022, PowerShell scripts, NTFS ACLs, actual IIS reverse-proxy scheme/Host handling, TLS certificate, boot scheduling and Windows process stop/rollback were not executable in this Linux environment. They require acceptance on your server. Windows scripts were reviewed; the Python occupied-port guard was executed. No IIS configuration or application deployment was performed.
-
-## Known boundaries
-
-- Original packaging image bytes were not available as a downloadable workspace file. Replace the generated default visuals with your original brand/product assets through admin.
-- Ordering starts disabled with an empty catalog. Optional demo drafts are unpriced/unpublished; real prices, contact details and business copy must be entered by the owner.
-- English and Arabic UI/RTL are supplied; missing product translations fall back to English. Free-text business and option fields need owner-provided Arabic/bilingual content.
-- Motion is stylized SVG/CSS, not footage of a person sipping. Default images are generated illustrations, not actual product/location photography.
-- Cash only. No payment gateway, automated customer messages, route/zone calculation, tax engine, newsletter service, staff subroles or two-factor login.
-- Retention/anonymization and backup expiry are deliberate administrative/operator actions. Pause media edits during backups for a consistent database-plus-media set.
-- IIS shares the persistent login rate-limit bucket across admin users; forwarded IP claims are deliberately not trusted.
-- Windows shutdown requires manual request draining before the script's owned-process stop. A background process is not an automatically installed Windows service.
-- SQLite is intended for one application instance on local disk; capacity/load testing was not performed.
+Schedule slots are administrator-maintained labels with enabled/disabled availability, not capacity-managed calendar bookings. Receiving phone validity is syntactic; the operator must verify the number actually has WhatsApp. No test claims messages were sent or received.

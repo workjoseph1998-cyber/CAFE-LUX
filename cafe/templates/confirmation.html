@@ -1,14 +1,1 @@
-{% extends 'base.html' %}{% block content %}<section class="section narrow confirmation">
-<span class="seal">✓</span>
-<span class="eyebrow">{{ tr('Order received') }}</span>
-<h1>{{ order.reference }}</h1>
-<p>{{ tr('We will confirm your order directly.') }}</p>
-<p>{{ tr(order.fulfillment) }} · {{ tr('Cash payment only') }}</p>{% for item in items %}<div class="summary-line">
-<span>{{ item.qty }} × {{ item.name }} · {{ item.label }}</span>
-<strong>{{ item.total|money }}</strong>
-</div>{% endfor %}<div class="cart-total">
-<span>{{ tr('Total') }}</span>
-<strong>{{ order.currency }} {{ order.total|money }}</strong>
-</div>
-<a class="button outline" href="{{ url_for('public.shop') }}">{{ tr('Back to shop') }}</a>
-</section>{% endblock %}
+{% extends 'base.html' %}{% block content %}<section class="section narrow confirmation"><span class="eyebrow">{{ order.status }}</span><h1>Your coffee is one message away.</h1><p>Order {{ order.reference }} is saved as a pending submission.</p><p><strong>Open WhatsApp and tap Send to submit your order.</strong> We have not received or confirmed it yet.</p>{% for item in items %}<div class="summary-line"><span>{{ item.qty }} × {{ item.name }}<small>{{ item.label }} · {{ item.grind }}{% for a in item.addons %} · {{ a.name }}{% endfor %}</small></span><strong>{{ item.total|money }}</strong></div>{% endfor %}<div class="cart-total"><span>{{ 'Total' if order.fee_known else 'Subtotal (delivery to be confirmed)' }}</span><strong>{{ order.currency }} {{ (order.total if order.fee_known else order.subtotal)|money }}</strong></div>{% if whatsapp_link %}<a class="button gold" href="{{ whatsapp_link }}" target="_blank" rel="noopener">Open WhatsApp & tap Send ↗</a>{% endif %}<p class="fineprint">You can reopen this link if needed. It uses the same order reference.</p><a class="underlink" href="/">Back to Café LUX</a></section>{% endblock %}

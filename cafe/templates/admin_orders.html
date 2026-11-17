@@ -1,26 +1,26 @@
 {% extends 'admin_base.html' %}{% block admin %}<h1>Orders</h1>
-<p>All orders · page {{ page }} of {{ pages }}. Times shown in UTC. Only completed orders count as revenue.</p>{% for o in orders %}<article class="panel order-card">
+<p>All orders · page {{ page }} of {{ pages }}. Times shown in UTC. Only delivered orders count as revenue.</p><form class="filters" method="get"><label>Status<select name="status"><option value="">All statuses</option>{% for s in statuses %}<option {{ 'selected' if request.args.get('status')==s }}>{{ s }}</option>{% endfor %}</select></label><label>Date (UTC)<input type="date" name="date" value="{{ request.args.get('date','') }}"></label><button class="button outline">Filter</button></form>{% for o in orders %}<article class="panel order-card">
 <div class="section-heading">
 <div>
 <span class="eyebrow">{{ o.created }} · {{ o.fulfillment }}</span>
-<h2>{{ o.reference }}</h2>
+<h2><a href="{{ url_for('admin.order_detail',oid=o.id) }}">{{ o.reference }}</a></h2>
 </div>
-<strong>{{ o.currency }} {{ o.total|money }}</strong>
+<strong>{{ (o.currency+" "+(o.total|money)) if o.fee_known else "Final total to be confirmed" }}</strong>
 </div>
-<p>{{ o.name }} · {{ o.phone }}</p>{% if o.address %}<p>{{ o.address }}</p>{% endif %}{% if o.requested_time %}<p>Requested time: {{ o.requested_time }}</p>{% endif %}{% if o.notes %}<p>Notes: {{ o.notes }}</p>{% endif %}<ul>{% for line in o.lines %}<li>{{ line.qty }} × {{ line.name }} · {{ line.label }} · {{ line.grind }} {{ line.temperature }}{% for a in line.addons %} · {{ a.name }}{% endfor %} — {{ line.total|money }}</li>{% endfor %}</ul>
-<p>Subtotal {{ o.subtotal|money }} · Delivery {{ o.delivery|money }} · Cash</p>
-<form method="post" class="inline">
+<p><strong>{{ o.status }}</strong> · Receiver: {{ o.receiving_phone or "Legacy order" }} · {{ o.area }}</p><p>{{ o.name }} · {{ o.phone }}</p>{% if o.address %}<p>{{ o.address }}</p>{% endif %}{% if o.requested_time %}<p>Requested time: {{ o.requested_time }}</p>{% endif %}{% if o.notes %}<p>Notes: {{ o.notes }}</p>{% endif %}<ul>{% for line in o.lines %}<li>{{ line.qty }} × {{ line.name }} · {{ line.label }} · {{ line.grind }} {{ line.temperature }}{% for a in line.addons %} · {{ a.name }}{% endfor %} — {{ line.total|money }}</li>{% endfor %}</ul>
+<p>Subtotal {{ o.subtotal|money }} · Delivery {{ (o.delivery|money) if o.fee_known else "To be confirmed" }} · Cash</p>
+<form method="post" action="/admin/orders" class="inline">
 <input type="hidden" name="csrf" value="{{ csrf_token }}">
 <input type="hidden" name="id" value="{{ o.id }}">
 <label>Status<select name="status">{% for status in statuses %}<option {{ 'selected' if status==o.status }}>{{ status }}</option>{% endfor %}</select>
 </label>
 <button class="button outline">Update status</button>
-</form>{% if o.status in ['Completed','Cancelled'] %}<form method="post" data-confirm="Permanently remove customer contact details from this order? Expire backup copies separately.">
+</form>{% if o.status in ['Delivered','Cancelled'] %}<form method="post" action="/admin/orders" data-confirm="Permanently remove customer contact details from this order? Expire backup copies separately.">
 <input type="hidden" name="csrf" value="{{ csrf_token }}">
 <input type="hidden" name="id" value="{{ o.id }}">
 <input type="hidden" name="status" value="{{ o.status }}">
 <button class="text-button" name="anonymize" value="1">Remove customer details</button>
-</form>{% endif %}</article>{% else %}<div class="empty-collection">
+</form>{% endif %}<details><summary>Status history</summary>{% for h in o.history %}<p>{{ h.created }} · {{ h.status }} · {{ h.username }}</p>{% endfor %}</details><p class="fineprint">Customer notifications: open a prepared message, then manually tap Send. These shortcuts do not change order status.</p><div class="actions">{% for status in statuses[2:-1] %}<a class="underlink" target="_blank" rel="noopener" href="{{ url_for('admin.notify',oid=o.id,status=status) }}">Notify: {{ status }} ↗</a>{% endfor %}</div></article>{% else %}<div class="empty-collection">
 <h2>No orders yet.</h2>
 <p>New customer orders will appear here once ordering is enabled.</p>
-</div>{% endfor %}<div class="actions">{% if page>1 %}<a class="button outline" href="{{ url_for('admin.orders',page=page-1) }}">Previous</a>{% endif %}{% if page<pages %}<a class="button outline" href="{{ url_for('admin.orders',page=page+1) }}">Next</a>{% endif %}</div>{% endblock %}
+</div>{% endfor %}<div class="actions">{% if page>1 %}<a class="button outline" href="{{ url_for('admin.orders',page=page-1,status=request.args.get('status',''),date=request.args.get('date','')) }}">Previous</a>{% endif %}{% if page<pages %}<a class="button outline" href="{{ url_for('admin.orders',page=page+1,status=request.args.get('status',''),date=request.args.get('date','')) }}">Next</a>{% endif %}</div>{% endblock %}

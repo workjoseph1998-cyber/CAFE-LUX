@@ -7,7 +7,7 @@
 <small>{{ tr('Ground Coffee' if l.kind=='ground' else 'Drinks') }}</small>
 <h3>{{ l.name_ar if ar and l.name_ar else l.name }}</h3>
 <p>{{ l.label_ar if ar and l.label_ar else l.label }}{% if l.grind %} · {{ l.grind }}{% endif %}{% if l.temperature %} · {{ tr(l.temperature) }}{% endif %}{% for a in l.addons %} · {{ a.name }}{% endfor %}</p>
-<strong>{{ site.currency }} {{ l.total|money }}</strong>
+<small>{{ site.currency }} {{ l.unit|money }} {{ tr('each') }}</small><strong>{{ site.currency }} {{ l.total|money }}</strong>
 </div>
 <form method="post" class="inline">
 <input type="hidden" name="csrf" value="{{ csrf_token }}">
@@ -21,7 +21,7 @@
 <h2>{{ tr('Subtotal') }}</h2>
 <strong>{{ site.currency }} {{ total|money }}</strong>
 </div>
-<div class="actions">
+<p class="fineprint">Delivery fee is calculated for your area at checkout. If unavailable, it will be marked to be confirmed.</p><div class="actions">
 <a class="button gold" href="{{ url_for('public.checkout') }}">{{ tr('Checkout') }} →</a>
 <a class="underlink" href="{{ url_for('public.shop') }}">{{ tr('Continue shopping') }}</a>
 </div>{% else %}<div class="empty-collection">
