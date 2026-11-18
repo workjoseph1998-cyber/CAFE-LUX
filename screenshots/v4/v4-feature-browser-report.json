@@ -1,0 +1,12 @@
+{
+  "checks": [
+    "Guest favorites merge into optional customer account; recovery codes shown once; profile/email/address saved",
+    "Quick add, bundle component summary, promotion, saved-address checkout, explicit consent and manual-Send pending confirmation",
+    "Authenticated order history and reordering rebuild current server-priced cart",
+    "Staff confirmation deducts normal and bundle stock exactly; durable worker reports MOCK with no real send",
+    "New account/favorites/bundle/admin pages responsive at 320,390,768,1366 pixels without body overflow",
+    "Arabic RTL account, favorites, bundles, home and checkout render without overflow"
+  ],
+  "javascript_errors": [],
+  "real_whatsapp_sends": 0
+}

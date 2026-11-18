@@ -1,34 +1,20 @@
-# Café LUX 3.0 operations workspace
+# Café LUX 4.0 operations workspace
 
-Sign in at `/admin` using an existing account. On a new installation only, create one with `manage.py init-admin`. Passwords are never seeded or reset by upgrades. Administrators manage all features; order operators can only access dashboard/orders, inspect details, update statuses and prepare customer notifications. Every route rechecks permissions.
+Sign in with the existing administrator. New installs: `python manage.py init-admin`. There is no public staff registration. Users & Security manages staff access; operator permissions are limited to orders/dashboard/internal notes.
 
-## Catalog workflow
+- **Dashboard:** real order states, today's UTC delivered gross sales, 14-day sales activity, low-stock alerts, catalog readiness and audit activity.
+- **Orders:** search/date/status filters, inspector, delivery/customer/options snapshot, internal notes, history, status actions and automatic WhatsApp job/consent history. Pending handoff is not receipt; verify the actual incoming message. Confirmation deducts stock once and cancellation reverses actual tracked deductions once. Manual notification links still require Send.
+- **Drinks / Coffee / Categories:** existing editors, variants, extras/exclusive groups, publication readiness, sorting and category management. Use real uploaded product photos in Media Library; upload through product editor or media library and select the registered image. Existing images never disappear during upgrade.
+- **Inventory:** per-variant stock, low threshold, optional cost and restocking notes/date. A stock adjustment requires a reason and writes movement history; stock blank means untracked. Product editor adjustments and order deductions/reversals are also recorded. Costs only affect future snapshots.
+- **Customers:** registered profiles and their owned orders, saved addresses, access revocation and privacy removal. Guests are counted separately. Never infer account ownership from phone numbers. Customer recovery codes are hashed and cannot be viewed by staff.
+- **Promotions:** percent/fixed codes, minimum, optional cap/dates/usage limit and active toggle. Dates are UTC. Pending submissions reserve a use for 30 minutes; confirmation checks validity again. Clear the customer's code to remove it. No default offers are created.
+- **Bundles:** select actual variants, quantities and valid grind/temperature/extras, set a total price and publish. The structured editor shows component selectors; advanced configuration remains visible for review. No default bundle is created. A component that becomes unavailable blocks adding/checkout. Component revenue is allocated proportionally in reports; stock remains actual quantity.
+- **Website Manager:** bilingual copy/images/banner, section order, visibility and draft/preview/publish. Featured products remain controlled by the product editor's Featured flag; featured collections by section visibility/order. Drafts never alter the public site until Publish. Settings retains live business/contact/legal configuration.
+- **Operations:** enabled ordering, pause, Asia/Beirut hours, closures, actual delivery areas/fees/minima, assigned/default active receiving number and optional active schedule slots. Area-assigned receivers work without a default; areas using Active default still need an enabled default number. Save each edited row/availability section. Both enabled receiver and area/time availability are required.
+- **WhatsApp Automation:** phone-ID mapping, actual approved language templates, enable switch, env/worker/webhook health, connection test, incoming manual review, durable jobs/error states and explicit safe retries. See [Meta guide](WHATSAPP.md). Exactly two automatic triggers.
+- **Reports:** UTC date/currency selection, delivered daily/monthly/product/type/area gross sales, all-order status counts, discounts/net, low-stock summary, profit only with reliable costs. Reports do not mix currencies. Dashboard retains grouped currency totals.
+- **Settings & Backups:** live business/legal/social/contact values and private backup export. Backups also available from dashboard tools. Restore is an offline CLI operation; see [upgrade/rollback](V4-UPGRADE.md).
 
-Run the explicit starter import described in `STARTER-CATALOG.md` after backing up and migrating. The compact sidebar separates Drinks from Beans & Ground Coffee. Categories, photos, operations and website settings stay accessible. Collapse the sidebar for icon-only navigation with tooltips; toggle Compact/Comfortable density in the header. Preferences are stored locally in the current browser, not in customer data.
+Recovery is three one-use customer codes displayed at registration or after authenticated regeneration. Keep them privately; no email reset is claimed. Customers may save optional email in their profile, but it is not an ownership credential.
 
-Product tables show category, variant count, pending/starting price, stock, status, missing-image/price indicators and readiness checks. Search/filter/sort results and page through inventories (30 records per page). Display order is editable from the row. Quick Live, Publish in the editor and bulk publishing use identical server-side validation. Bulk actions are atomic; one invalid selected product prevents the whole publication action. Move selected products to draft without deleting them.
-
-The product editor groups Basic information, Images, Pricing & variants, Customization and Publishing. Save an incomplete product as draft first. Enter confirmed descriptions/recipes/ingredient facts; starter marketing copy is not verified ingredient disclosure. Upload and assign a real owned/licensed product photo directly from the editor, or select one from Product images. Uploads retain previous image files and never overwrite another file. Unsupported files are rejected, decoded images are resized to at most 1600 px and re-encoded as optimized JPEGs.
-
-Edit each enabled variant's independent price, grams, stock, optional SKU and order. Blank stock disables tracking; zero means unavailable. Preparation/grind and hot/cold restrictions belong to the exact variant, so whole-bean and ground combinations cannot be interchanged. Draft variants are disabled and unpriced until reviewed. Extras are optional and can use exclusive Milk/Sugar/Strength/Syrup groups. Pending surcharges show blank; enter an explicit value (including 0 for intentionally free) before enabling. Drafts and pending extras cannot be bought through crafted requests.
-
-Publish requires a name, description, a registered uploaded photo that exists on disk, an active category and at least one enabled priced variant. All enabled variants need explicit prices; enabled extras cannot be pending. Existing legacy records are not automatically unpublished by migration, but future edit/publication operations enforce the checks. Changing the last purchasable variant of a live product requires drafting it first. Unsaved changes trigger browser navigation warnings; external variant/extra forms warn if another form has unsaved changes.
-
-## Operations
-
-Compact tables manage real WhatsApp receivers and delivery areas. Set one enabled default receiver. An area can use another enabled receiver; a disabled assignment falls back to the enabled default. Each order routes to one number. No receiver or no active area means checkout is unavailable. Unknown delivery fees are clearly pending and never shown as a final payable total. Existing settings are not changed by catalog seeding.
-
-Set daily hours in Asia/Beirut time, closure dates and optional dated schedule slots. Slots remain administrator-maintained availability labels; disable full/past slots manually. Pausing stops all new submissions. A closure/out-of-hours period blocks immediate orders while explicitly configured scheduled slots can remain available.
-
-## Orders
-
-The order table supports reference/customer/phone search, UTC date/status filters and 30-row pages. Inspect opens an optional private side panel, or follow the reference/Details link for the full page. Both show delivery details, selected sizes/weights/preparations/extras, notes, totals, receiver and status history, with the same authorization. Status updates and manual WhatsApp notification links are in this compact detail view.
-
-Initial status is **Pending WhatsApp Submission**. Customers must open WhatsApp and tap Send; the website cannot infer message receipt. Mark Received only after staff actually see the message. Confirmed/Preparing/Ready/Out for Delivery/Delivered changes deduct tracked stock once under a write lock. Pending/Received do not reserve stock, so staff confirmation can fail if another order consumed inventory. Cancellation restores only stock actually deducted and cannot reopen a cancelled order. Only Delivered product sales count as revenue; delivery charges are excluded.
-
-Notification links prepare messages to the actual customer's saved phone and order reference. Staff must tap Send. Opening the link neither changes status nor claims delivery.
-
-Backups/retention are in the dashboard's administrative tools section. Retention anonymizes closed orders when explicitly applied; expire backup copies separately. Backup ZIPs contain private customer data and hashes and must never enter Git or public hosting static directories.
-
-
-V3 supplies a new independent light olive/ivory operational design, overview/activity panels, breadcrumb/search header and compact tables. Sidebar/density preferences retain their existing keys. Underlying product/order/media/settings actions and all server-side permissions are unchanged. The customer Coffee Finder and recently viewed UI do not alter catalog or order records.
+Catalog Tools are explicit optional sample utilities, not installation steps. Do not use them on a real catalog unless you deliberately want the documented sample content/prices.

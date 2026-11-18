@@ -57,6 +57,7 @@ def protected(fn):
             "admin.order_detail",
             "admin.notify",
             "admin.logout",
+            "workspace.note",
         ):
             abort(403)
         return fn(*a, **kw)
@@ -156,6 +157,12 @@ def dashboard():
     return render_template(
         "admin_dashboard.html",
         stats=stats,
+        today_sales=conn.execute(
+            "SELECT currency,sum(subtotal) total FROM orders WHERE status='Delivered' AND date(created)=date('now') GROUP BY currency"
+        ).fetchall(),
+        sales_activity=conn.execute(
+            "SELECT date(created) day,currency,sum(subtotal) total FROM orders WHERE status='Delivered' AND date(created)>=date('now','-13 days') GROUP BY day,currency ORDER BY day"
+        ).fetchall(),
         revenue=conn.execute(
             "SELECT currency,sum(subtotal) total FROM orders WHERE status='Delivered' GROUP BY currency"
         ).fetchall(),
@@ -168,7 +175,7 @@ def dashboard():
             + " ORDER BY p.active,p.id LIMIT 10"
         ).fetchall(),
         inventory=conn.execute(
-            "SELECT v.*,p.name FROM variants v JOIN products p ON p.id=v.product_id WHERE stock<=5 ORDER BY stock LIMIT 10"
+            "SELECT v.*,p.name FROM variants v JOIN products p ON p.id=v.product_id WHERE v.active=1 AND stock<=v.low_threshold ORDER BY stock LIMIT 10"
         ).fetchall(),
         audit=conn.execute("SELECT * FROM audit ORDER BY id DESC LIMIT 8").fetchall(),
     )
@@ -457,6 +464,15 @@ def option(pid):
             raise ValueError(
                 "Enter an explicit extra price (0 is allowed) before enabling it."
             )
+        previous_stock = (
+            db()
+            .execute(
+                "SELECT stock FROM variants WHERE id=? AND product_id=?", (oid, pid)
+            )
+            .fetchone()
+            if kind == "variant" and oid
+            else None
+        )
         if oid:
             db().execute(
                 "UPDATE "
@@ -476,6 +492,17 @@ def option(pid):
                 + ",".join("?" for _ in range(len(values) + 1))
                 + ")",
                 (pid, *values.values()),
+            )
+        if kind == "variant":
+            from .commerce import movement
+
+            variant_id = oid or db().execute("SELECT last_insert_rowid()").fetchone()[0]
+            movement(
+                variant_id,
+                previous_stock[0] if previous_stock else None,
+                values["stock"],
+                "Product editor",
+                actor=session["username"],
             )
         product = db().execute("SELECT * FROM products WHERE id=?", (pid,)).fetchone()
         if product["active"]:
@@ -757,8 +784,25 @@ def orders():
                 in ("Confirmed", "Preparing", "Ready", "Out for Delivery", "Delivered")
                 and not order["stock_deducted"]
             ):
+                if order["promotion_id"]:
+                    from .commerce import promotion
+
+                    promo = conn.execute(
+                        "SELECT code FROM promotions WHERE id=?",
+                        (order["promotion_id"],),
+                    ).fetchone()
+                    _, discount = promotion(
+                        order["subtotal"], promo["code"] if promo else "", oid
+                    )
+                    if discount != order["discount"]:
+                        raise ValueError(
+                            "Promotion changed; review this order with the customer."
+                        )
                 stock_changes = []
-                for item in json.loads(order["items"]):
+                from .commerce import requirements, movement
+
+                for vid, quantity in requirements(json.loads(order["items"])).items():
+                    item = {"variant": vid, "qty": quantity}
                     variant = conn.execute(
                         "SELECT stock FROM variants WHERE id=?", (item["variant"],)
                     ).fetchone()
@@ -775,6 +819,14 @@ def orders():
                             raise ValueError(
                                 "Insufficient stock to confirm this order."
                             )
+                        movement(
+                            item["variant"],
+                            variant["stock"],
+                            variant["stock"] - item["qty"],
+                            "Order confirmation",
+                            oid,
+                            session["username"],
+                        )
                         stock_changes.append(
                             {"variant": item["variant"], "qty": item["qty"]}
                         )
@@ -792,6 +844,20 @@ def orders():
                     if order["stock_changes"] is not None
                     else order["items"]
                 ):
+                    from .commerce import movement
+
+                    before = conn.execute(
+                        "SELECT stock FROM variants WHERE id=?", (item["variant"],)
+                    ).fetchone()
+                    if before and before[0] is not None:
+                        movement(
+                            item["variant"],
+                            before[0],
+                            before[0] + item["qty"],
+                            "Order cancellation",
+                            oid,
+                            session["username"],
+                        )
                     conn.execute(
                         "UPDATE variants SET stock=stock+? WHERE id=? AND stock IS NOT NULL",
                         (item["qty"], item["variant"]),
@@ -802,6 +868,10 @@ def orders():
                 (oid, status, session["username"]),
             )
             conn.execute("UPDATE orders SET status=? WHERE id=?", (status, oid))
+            if status != order["status"]:
+                from .whatsapp import enqueue
+
+                enqueue(order, status)
             audit("Order " + order["reference"] + " → " + status)
             conn.commit()
         except ValueError as e:
@@ -1053,6 +1123,12 @@ def order_detail(oid):
     row = dict(
         order,
         lines=json.loads(order["items"]),
+        internal_notes=db()
+        .execute("SELECT * FROM order_notes WHERE order_id=? ORDER BY id", (oid,))
+        .fetchall(),
+        jobs=db()
+        .execute("SELECT * FROM whatsapp_jobs WHERE order_id=? ORDER BY id", (oid,))
+        .fetchall(),
         history=db()
         .execute("SELECT * FROM order_history WHERE order_id=? ORDER BY id", (oid,))
         .fetchall(),

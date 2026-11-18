@@ -4,7 +4,7 @@ The final release includes 22 small sample illustrations, approved starter descr
 
 ## Existing Windows installation
 
-1. Back up and stop the application. Extract `Cafe-LUX-Final-Catalog.zip` into a new directory and keep the same `CAFE_LUX_DATA_DIR` and existing administrator. Run `setup.bat`, then `start.bat`. Existing V2.1 installations keep schema v4.
+1. Back up and stop the application. Extract `Cafe-LUX-Version-4.0-Quiet-Ritual.zip` into a new directory and keep the same `CAFE_LUX_DATA_DIR` and existing administrator. Run `setup.bat`, then `start.bat`. Existing installations migrate additively to schema 5; follow V4-UPGRADE.md first.
 2. Sign in to `/admin` and select **Catalog preview** (or **Fill & publish starter catalog** in the product table toolbar).
 3. Click **Fill missing info & publish all with sample prices**.
 4. Open `/drinks`, `/coffee` or the homepage in a signed-out browser. These are the real customer pages, not an admin-only preview. All normal untouched starter products now have images, descriptions and prices and can be added to the cart.

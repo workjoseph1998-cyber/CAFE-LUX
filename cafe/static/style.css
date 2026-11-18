@@ -3552,3 +3552,1015 @@ legend {
     padding-bottom: 18px;
   }
 }
+/* V4 — Quiet Ritual. Porcelain, forest and open space. */
+:root {
+  --ink: #173d32;
+  --espresso: #173d32;
+  --cream: #fafbf7;
+  --paper: #fff;
+  --copper: #397358;
+  --muted: #64746b;
+  --line: #dfe7dd;
+  --serif: Arial, Helvetica, sans-serif;
+}
+body {
+  background: #fafbf7;
+  color: #173d32;
+  font-family: Arial, Helvetica, sans-serif;
+}
+h1,
+h2,
+h3,
+h4,
+.brand,
+.footer-brand {
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.045em;
+}
+h1 {
+  font-size: clamp(2.7rem, 5.8vw, 5.8rem);
+  line-height: 1.04;
+}
+h2 {
+  font-size: clamp(2rem, 3.3vw, 3.4rem);
+  line-height: 1.1;
+}
+.eyebrow {
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  font-weight: 600;
+  color: #59735e;
+}
+.header {
+  background: #fafbf7;
+  min-height: 90px;
+  border-bottom: 1px solid #e1e7dc;
+  gap: 24px;
+}
+.brand-emblem {
+  background: #e8eedf;
+  border: 0;
+  color: #173d32;
+  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+}
+.brand strong {
+  font-weight: 700;
+}
+.brand small {
+  letter-spacing: 0.22em;
+}
+.header nav {
+  gap: 22px;
+}
+.header nav a {
+  font-size: 0.76rem;
+}
+.header-actions {
+  gap: 14px;
+}
+.account-link svg {
+  width: 20px;
+  height: 20px;
+}
+.favorites-link {
+  font-size: 25px;
+}
+.icon-button {
+  color: inherit;
+}
+.button {
+  border-radius: 100px;
+  font-family: inherit;
+  font-size: 0.77rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  padding: 17px 25px;
+  min-height: 48px;
+}
+.button.dark,
+.button.copper {
+  background: #173d32;
+  border-color: #173d32;
+  color: white;
+}
+.button.outline {
+  border-color: #cad8ca;
+  color: #173d32;
+  background: transparent;
+}
+.button:hover {
+  background: #34634e;
+  color: white;
+}
+.underlink {
+  font-weight: 600;
+  font-size: 0.78rem;
+  border-color: #bbcdbb;
+}
+.ritual-hero {
+  max-width: 1600px;
+  margin: auto;
+  padding: 52px 5.5% 42px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5%;
+  align-items: center;
+  min-height: 620px;
+}
+.ritual-copy {
+  padding: 35px 0;
+}
+.ritual-copy h1 {
+  max-width: 650px;
+  margin: 25px 0;
+}
+.ritual-copy > p {
+  max-width: 430px;
+  font-size: 1rem;
+  line-height: 1.8;
+  color: #627367;
+}
+.ritual-copy .actions {
+  margin: 35px 0;
+  gap: 24px;
+}
+.ritual-caption {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 50px;
+  font-size: 0.73rem;
+}
+.small-orbit {
+  border: 1px solid #c4d3c0;
+  border-radius: 50%;
+  padding: 10px;
+  display: inline-flex;
+}
+.small-orbit svg {
+  width: 20px;
+  height: 20px;
+}
+.ritual-visual {
+  position: relative;
+  min-width: 0;
+  align-self: stretch;
+  border-radius: 190px 190px 16px 16px;
+  overflow: hidden;
+  background: #e0e8db;
+  min-height: 480px;
+}
+.ritual-visual > img {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.visual-caption {
+  position: absolute;
+  inset: 28px 0 auto;
+  text-align: center;
+  color: #fff;
+  font-size: 0.68rem;
+  letter-spacing: 0.15em;
+}
+.visual-link {
+  position: absolute;
+  bottom: 20px;
+  inset-inline: 20px;
+  background: #fafbf7ed;
+  border-radius: 100px;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+}
+.visual-link svg {
+  width: 20px;
+  height: 20px;
+}
+.ritual-values {
+  border-block: 1px solid #dfe7dd;
+  display: flex;
+  justify-content: space-around;
+  gap: 15px;
+  max-width: 1420px;
+  margin: 10px auto 25px;
+  padding: 24px;
+  color: #5b7160;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.section {
+  max-width: 1420px;
+  padding: 65px 5.5%;
+  margin: auto;
+}
+.section-heading {
+  margin-bottom: 30px;
+}
+.section-heading h2 {
+  max-width: 700px;
+  margin: 14px 0;
+}
+.inline-heading > p {
+  max-width: 340px;
+  color: #64746b;
+  line-height: 1.8;
+  font-size: 0.85rem;
+}
+.portal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.collection-portal {
+  position: relative;
+  min-height: 360px;
+  overflow: hidden;
+  border-radius: 16px;
+  color: white;
+  background: #173d32;
+}
+.collection-portal > img {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.74;
+  transition: transform 0.4s;
+}
+.collection-portal:hover > img {
+  transform: scale(1.025);
+}
+.collection-portal > div {
+  position: absolute;
+  bottom: 32px;
+  inset-inline: 30px;
+}
+.collection-portal .eyebrow {
+  color: #e6eedf;
+}
+.collection-portal h3 {
+  font-size: 2.7rem;
+  margin: 12px 0;
+}
+.collection-portal div > span:last-child {
+  font-size: 0.75rem;
+}
+.product-grid {
+  gap: 24px;
+}
+.product-card {
+  position: relative;
+  background: white;
+  border: 1px solid #e2e9de;
+  border-radius: 15px;
+  overflow: hidden;
+}
+.product-photo {
+  display: block;
+  aspect-ratio: 1/1.06;
+  border: 0;
+  background: #edf1e8;
+}
+.product-photo img {
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+.product-tag {
+  top: 16px;
+  inset-inline-start: 15px;
+  background: #fafbf7de;
+  color: #345640;
+  font-size: 0.53rem;
+  border-radius: 100px;
+  padding: 8px 11px;
+}
+.card-info {
+  padding: 20px;
+}
+.card-title {
+  display: block;
+}
+.card-title h3 {
+  font-size: 1.14rem;
+  letter-spacing: -0.02em;
+  margin: 0 0 9px;
+  font-weight: 600;
+}
+.card-price {
+  display: block;
+  color: #173d32;
+  font-size: 0.82rem;
+}
+.card-info > p {
+  color: #6b796f;
+  font-size: 0.74rem;
+  line-height: 1.7;
+  min-height: 45px;
+}
+.card-caption {
+  font-size: 0.65rem;
+  border-color: #e0e7db;
+  gap: 8px;
+}
+.card-caption a {
+  font-weight: 600;
+}
+.favorite-form {
+  position: absolute;
+  top: 12px;
+  inset-inline-end: 12px;
+  z-index: 2;
+}
+.favorite-form button {
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 50%;
+  background: #fafbf7e8;
+  color: #173d32;
+  font-size: 24px;
+  cursor: pointer;
+}
+.favorite-form button[aria-pressed="true"] {
+  background: #173d32;
+  color: white;
+}
+.ritual-story {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8%;
+  align-items: center;
+}
+.ritual-story-image {
+  height: 480px;
+  border-radius: 16px 130px 16px 16px;
+  overflow: hidden;
+}
+.ritual-story-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ritual-story h2 {
+  margin: 22px 0;
+}
+.ritual-story p {
+  font-size: 0.9rem;
+  line-height: 1.9;
+  color: #64746b;
+}
+.ritual-story .underlink {
+  margin-top: 22px;
+  display: inline-block;
+}
+.finder-invitation {
+  background: #e8eee1;
+  border-radius: 20px;
+  text-align: center;
+  margin-block: 35px 70px;
+  max-width: 1250px;
+  padding: 65px 25px;
+}
+.finder-invitation h2 {
+  margin: 20px;
+}
+.finder-invitation p {
+  max-width: 500px;
+  margin: 20px auto 25px;
+  font-size: 0.9rem;
+  line-height: 1.8;
+  color: #61715f;
+}
+.how-grid article {
+  border-radius: 15px;
+  border: 1px solid #dfe7dd;
+  padding: 26px;
+  gap: 18px;
+}
+.how-grid article > span {
+  font-family: inherit;
+  color: #789079;
+  font-size: 1rem;
+}
+.how-grid h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.site-footer {
+  background: #173d32;
+  color: #eff3e7;
+}
+.footer-heading {
+  border-color: #496552;
+}
+.footer-heading p {
+  font-family: inherit;
+  font-size: 2rem;
+  font-weight: 400;
+}
+.site-footer .eyebrow {
+  color: #b8cbb0;
+}
+.footer-grid {
+  border-color: #496552;
+}
+.footer-brand {
+  font-size: 2.2rem;
+}
+.page-intro,
+.catalog-intro {
+  background: #edf2e7;
+  border-bottom: 0;
+  padding: 60px 5.5%;
+}
+.catalog-emblem {
+  border: 0;
+  background: #dce8d4;
+  border-radius: 50%;
+}
+.catalog-meta {
+  color: #64746b;
+}
+.panel {
+  background: #fff;
+  border: 1px solid #dfe7dd;
+  border-radius: 16px;
+}
+.panel h2 {
+  font-size: 1.8rem;
+}
+.filters {
+  gap: 16px;
+}
+.filters select,
+.filters input,
+input,
+textarea,
+select {
+  border-color: #cdd8c8;
+  border-radius: 9px;
+  background: #fff;
+  color: #173d32;
+}
+.product-gallery img {
+  border-radius: 18px;
+}
+.product-detail h1 {
+  font-size: clamp(2.4rem, 4vw, 4rem);
+}
+.product-thumbnails button {
+  border-radius: 10px;
+}
+.form-section {
+  border-color: #dfe7dd;
+}
+.checkout-progress .current {
+  color: #173d32;
+}
+.checkout-note {
+  border-color: #dfe7dd;
+}
+.flash {
+  background: #e0ead7;
+  color: #173d32;
+}
+.consent-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 0.78rem;
+  line-height: 1.7;
+  margin: 24px 0;
+}
+.consent-choice input {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.account-page > h1 {
+  max-width: 900px;
+  margin: 22px 0 50px;
+}
+.account-shell {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 35px;
+}
+.account-shell .panel {
+  padding: 30px;
+  margin-bottom: 25px;
+}
+.account-shell label {
+  display: block;
+  margin: 18px 0;
+}
+.account-aside {
+  background: #e4ecdc;
+  border-radius: 18px;
+  padding: 50px;
+  align-self: start;
+}
+.account-aside h2 {
+  font-size: 2.5rem;
+}
+.account-aside p {
+  line-height: 1.9;
+  margin: 25px 0;
+}
+.address-card {
+  padding: 22px 0;
+  border-bottom: 1px solid #e0e7db;
+}
+.address-card p {
+  font-size: 0.84rem;
+  line-height: 1.8;
+}
+.recovery-code code {
+  font-size: 1.1rem;
+  word-break: break-all;
+}
+.bundle-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+.bundle-card {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.bundle-card h2,
+.bundle-card h3 {
+  font-size: 1.9rem;
+}
+.bundle-card p {
+  font-size: 0.85rem;
+  line-height: 1.8;
+  color: #64746b;
+}
+.bundle-card form {
+  margin-top: auto;
+}
+.bundle-card input {
+  max-width: 90px;
+}
+.bundle-lines {
+  font-size: 0.7rem;
+  color: #64746b;
+  margin: 10px 0;
+}
+.promotion-form {
+  margin: 25px 0;
+  display: flex;
+  gap: 15px;
+  align-items: end;
+  flex-wrap: wrap;
+}
+.promotion-form label {
+  flex: 1;
+}
+.promotion-form small {
+  width: 100%;
+  font-size: 0.7rem;
+}
+.cart-drawer {
+  background: #fafbf7;
+  border-radius: 20px 0 0 20px;
+}
+.drawer-head h2 {
+  font-family: inherit;
+}
+.drawer-head,
+.drawer-footer {
+  border-color: #dfe7dd;
+}
+.header nav a.active::after {
+  background: #173d32;
+}
+.bottom-nav {
+  background: #fafbf7f5;
+  color: #173d32;
+  border-color: #dfe7dd;
+}
+.bottom-nav .active {
+  color: #173d32;
+}
+.bottom-nav .active:before {
+  background: #173d32;
+}
+.cart-count {
+  background: #173d32;
+  color: #fff;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #528862;
+  outline-offset: 4px;
+}
+[dir="rtl"] .ritual-visual {
+  border-radius: 190px 190px 16px 16px;
+}
+@media (min-width: 1500px) {
+  .header {
+    padding-inline: 5.5%;
+  }
+  .ritual-hero {
+    padding-inline: 7%;
+  }
+}
+@media (max-width: 1100px) {
+  .header nav {
+    gap: 13px;
+  }
+  .header nav a {
+    font-size: 0.65rem;
+  }
+  .header-actions {
+    gap: 10px;
+  }
+  .header .bag-label {
+    display: none;
+  }
+  .ritual-hero {
+    gap: 4%;
+    min-height: 560px;
+  }
+  .ritual-visual {
+    min-height: 420px;
+  }
+  .product-grid {
+    gap: 16px;
+  }
+  .card-info {
+    padding: 16px;
+  }
+  .bundle-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 760px) {
+  .header {
+    min-height: 75px;
+    padding: 15px 5%;
+    gap: 12px;
+  }
+  .header-actions {
+    gap: 13px;
+  }
+  .header nav {
+    background: #fafbf7;
+  }
+  .header nav a {
+    font-size: 0.95rem;
+  }
+  .brand-emblem {
+    width: 33px;
+    height: 33px;
+  }
+  .brand small {
+    font-size: 0.42rem;
+  }
+  .ritual-hero {
+    display: flex;
+    flex-direction: column;
+    padding: 26px 5% 30px;
+    gap: 25px;
+    min-height: 0;
+  }
+  .ritual-copy {
+    padding: 12px 0 0;
+    text-align: center;
+  }
+  .ritual-copy h1 {
+    font-size: clamp(2.6rem, 10vw, 4rem);
+    margin: 20px auto;
+    max-width: 500px;
+  }
+  .ritual-copy > p {
+    font-size: 0.85rem;
+    margin: auto;
+    max-width: 340px;
+  }
+  .ritual-copy .actions {
+    justify-content: center;
+    gap: 18px;
+    margin: 24px 0;
+  }
+  .ritual-caption {
+    justify-content: center;
+    margin-top: 22px;
+    font-size: 0.65rem;
+  }
+  .small-orbit {
+    padding: 7px;
+  }
+  .ritual-visual {
+    width: 100%;
+    min-height: 390px;
+    border-radius: 170px 170px 16px 16px;
+  }
+  .visual-link {
+    padding: 17px;
+  }
+  .ritual-values {
+    gap: 15px;
+    padding: 20px 4%;
+    margin: 0;
+    font-size: 0.5rem;
+    line-height: 1.7;
+    text-align: center;
+  }
+  .section {
+    padding: 42px 5%;
+  }
+  .section-heading h2 {
+    font-size: 2rem;
+    max-width: 95%;
+  }
+  .inline-heading {
+    align-items: start;
+    gap: 12px;
+  }
+  .inline-heading > .underlink {
+    font-size: 0.65rem;
+    white-space: normal;
+    max-width: 110px;
+  }
+  .inline-heading > p {
+    font-size: 0.75rem;
+    max-width: none;
+  }
+  .portal-grid {
+    gap: 15px;
+  }
+  .collection-portal {
+    min-height: 300px;
+    border-radius: 12px;
+  }
+  .collection-portal > div {
+    inset-inline: 17px;
+    bottom: 22px;
+  }
+  .collection-portal h3 {
+    font-size: 1.7rem;
+  }
+  .collection-portal .eyebrow {
+    font-size: 0.48rem;
+  }
+  .collection-portal div > span:last-child {
+    font-size: 0.62rem;
+  }
+  .product-grid {
+    gap: 12px;
+  }
+  .product-photo {
+    aspect-ratio: 0.88;
+  }
+  .product-tag {
+    top: 10px;
+    inset-inline-start: 9px;
+    font-size: 0.42rem;
+    padding: 6px 8px;
+  }
+  .favorite-form {
+    top: 8px;
+    inset-inline-end: 8px;
+  }
+  .favorite-form button {
+    width: 30px;
+    height: 30px;
+    font-size: 21px;
+  }
+  .card-info {
+    padding: 13px 11px;
+  }
+  .card-title h3 {
+    font-size: 1rem;
+    line-height: 1.25;
+  }
+  .card-price {
+    font-size: 0.7rem;
+  }
+  .card-info > p {
+    font-size: 0.66rem;
+    line-height: 1.6;
+    min-height: 50px;
+  }
+  .card-caption {
+    font-size: 0.57rem;
+    flex-wrap: wrap;
+  }
+  .ritual-story {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .ritual-story-image {
+    height: 350px;
+    border-radius: 12px 100px 12px 12px;
+  }
+  .ritual-story h2 {
+    font-size: 2.3rem;
+    max-width: 340px;
+  }
+  .finder-invitation {
+    margin: 20px 5% 45px;
+    max-width: 90%;
+    padding: 40px 20px;
+  }
+  .finder-invitation h2 {
+    font-size: 2.2rem;
+    margin: 20px 0;
+  }
+  .how-grid {
+    gap: 15px;
+  }
+  .how-grid article {
+    padding: 22px;
+    display: flex;
+  }
+  .footer-heading p {
+    font-size: 1.5rem;
+  }
+  .account-shell {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .account-shell .panel {
+    padding: 24px;
+  }
+  .account-aside {
+    padding: 30px;
+  }
+  .account-page > h1 {
+    font-size: 2.8rem;
+    margin-bottom: 30px;
+  }
+  .bundle-grid {
+    grid-template-columns: 1fr;
+  }
+  .catalog-intro h1,
+  .page-intro h1 {
+    font-size: 2.8rem;
+  }
+  .catalog-intro,
+  .page-intro {
+    padding: 40px 5%;
+  }
+  .filters {
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .filters .search-field {
+    grid-column: 1/-1;
+  }
+  .filters button {
+    align-self: end;
+  }
+  .cart-drawer {
+    border-radius: 18px 0 0 18px;
+  }
+  .site-footer {
+    padding-bottom: 85px;
+  }
+  .account-link {
+    display: inline-flex;
+  }
+  .favorite-form button {
+    min-width: 34px;
+    min-height: 34px;
+  }
+  .bottom-nav a {
+    min-height: 54px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation: none !important;
+  }
+}
+.quick-add {
+  margin: 0;
+}
+.quick-add .text-button {
+  font-size: inherit;
+  padding: 3px 0;
+  color: #173d32;
+}
+@media (max-width: 500px) {
+  .header .favorites-link,
+  .header .account-link {
+    display: none;
+  }
+  .header-actions {
+    gap: 12px;
+  }
+  .header .brand {
+    min-width: 0;
+  }
+  .header {
+    justify-content: space-between;
+  }
+  .portal-section .inline-heading {
+    display: block;
+  }
+  .portal-section .inline-heading > p {
+    margin-top: 18px;
+    max-width: 300px;
+  }
+  .ritual-copy .actions {
+    gap: 14px;
+  }
+  .ritual-copy .actions .underlink {
+    font-size: 0.7rem;
+  }
+  .ritual-copy .actions .button {
+    padding-inline: 20px;
+  }
+  .ritual-copy h1 {
+    font-size: clamp(2.4rem, 10.5vw, 4rem);
+  }
+}
+.header nav .mobile-account-nav {
+  display: none;
+}
+@media (max-width: 900px) {
+  .header nav .mobile-account-nav {
+    display: block;
+  }
+}
+@media (max-width: 1100px) {
+  .header {
+    position: relative;
+    justify-content: space-between;
+  }
+  .header-actions {
+    margin-inline-start: auto;
+    flex-shrink: 0;
+  }
+  .menu-toggle {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    padding: 5px;
+    border: 0;
+    background: transparent;
+  }
+  #navigation {
+    display: none;
+    position: absolute;
+    top: 100%;
+    inset-inline: 0;
+    z-index: 30;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 18px 5%;
+    background: #fafbf7;
+    box-shadow: 0 20px 25px #173d3212;
+    border-bottom: 1px solid #dfe7dd;
+  }
+  #navigation.open {
+    display: flex;
+  }
+  #navigation > a,
+  #navigation .finder-nav {
+    padding: 12px 0;
+    font-size: 0.86rem;
+    border-bottom: 1px solid #dfe7dd;
+  }
+  #navigation .active:after {
+    display: none;
+  }
+  .header nav .mobile-account-nav {
+    display: block;
+  }
+}
+
+:root {
+  --ivory: #fafbf7;
+  --sand: #e8eee1;
+  --copper-dark: #285a44;
+}
+.announcement {
+  background: #e8eee1;
+  color: #173d32;
+}
+.header #navigation .finder-nav {
+  color: #285a44;
+}

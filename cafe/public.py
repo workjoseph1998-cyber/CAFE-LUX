@@ -58,93 +58,98 @@ def catalog(kind=None):
     return db().execute(sql + " ORDER BY c.position,p.position,p.id", args).fetchall()
 
 
-def priced_cart():
-    lines = []
-    for item in session.get("cart", []):
-        v = (
+def price_single(item):
+    v = (
+        db()
+        .execute(
+            "SELECT v.*,p.name,p.name_ar,p.kind,p.grinds,p.temperature,p.category_id,(SELECT c.name FROM categories c WHERE c.id=p.category_id) category_name,p.image,p.active product_active FROM variants v JOIN products p ON p.id=v.product_id WHERE v.id=?",
+            (item["variant"],),
+        )
+        .fetchone()
+    )
+    category_disabled = (
+        v
+        and v["category_id"]
+        and db()
+        .execute(
+            "SELECT 1 FROM categories WHERE id=? AND active=0", (v["category_id"],)
+        )
+        .fetchone()
+    )
+    if (
+        not v
+        or not v["active"]
+        or not v["product_active"]
+        or v["price"] is None
+        or category_disabled
+    ):
+        raise ValueError("An item is unavailable. Clear your cart and choose again.")
+    if v["stock"] is not None and v["stock"] < item["qty"]:
+        raise ValueError("Insufficient stock for " + v["name"])
+    addons = []
+    for aid in item["addons"]:
+        a = (
             db()
             .execute(
-                "SELECT v.*,p.name,p.name_ar,p.kind,p.grinds,p.temperature,p.category_id,(SELECT c.name FROM categories c WHERE c.id=p.category_id) category_name,p.image,p.active product_active FROM variants v JOIN products p ON p.id=v.product_id WHERE v.id=?",
-                (item["variant"],),
+                "SELECT * FROM addons WHERE id=? AND active=1 AND price_pending=0 AND product_id=?",
+                (aid, v["product_id"]),
             )
             .fetchone()
         )
-        category_disabled = (
-            v
-            and v["category_id"]
-            and db()
-            .execute(
-                "SELECT 1 FROM categories WHERE id=? AND active=0", (v["category_id"],)
-            )
-            .fetchone()
-        )
+        if not a:
+            raise ValueError("An add-on is unavailable. Please rebuild your cart.")
+        addons.append(dict(a))
+    for key, allowed in [
+        ("grind", v["allowed_grinds"] or v["grinds"]),
+        (
+            "temperature",
+            v["allowed_temperatures"]
+            or ("hot,cold" if v["temperature"] == "both" else v["temperature"]),
+        ),
+    ]:
         if (
-            not v
-            or not v["active"]
-            or not v["product_active"]
-            or v["price"] is None
-            or category_disabled
+            (key == "grind" or v["kind"] == "drink")
+            and allowed
+            and item.get(key, "") not in allowed.split(",")
         ):
             raise ValueError(
-                "An item is unavailable. Clear your cart and choose again."
+                "This combination is unavailable. Please choose product options again."
             )
-        if v["stock"] is not None and v["stock"] < item["qty"]:
-            raise ValueError("Insufficient stock for " + v["name"])
-        addons = []
-        for aid in item["addons"]:
-            a = (
-                db()
-                .execute(
-                    "SELECT * FROM addons WHERE id=? AND active=1 AND price_pending=0 AND product_id=?",
-                    (aid, v["product_id"]),
-                )
-                .fetchone()
-            )
-            if not a:
-                raise ValueError("An add-on is unavailable. Please rebuild your cart.")
-            addons.append(dict(a))
-        for key, allowed in [
-            ("grind", v["allowed_grinds"] or v["grinds"]),
-            (
-                "temperature",
-                v["allowed_temperatures"]
-                or ("hot,cold" if v["temperature"] == "both" else v["temperature"]),
-            ),
-        ]:
-            if (
-                (key == "grind" or v["kind"] == "drink")
-                and allowed
-                and item.get(key, "") not in allowed.split(",")
-            ):
-                raise ValueError(
-                    "This combination is unavailable. Please choose product options again."
-                )
-        groups = [a["option_group"] for a in addons if a["option_group"]]
-        if len(groups) != len(set(groups)):
-            raise ValueError("Choose only one option in each extras group.")
-        unit = v["price"] + sum(a["price"] for a in addons)
-        lines.append(
-            dict(
-                image=v["image"],
-                variant=v["id"],
-                grams=v["grams"],
-                sku=v["sku"],
-                product=v["product_id"],
-                name=v["name"],
-                name_ar=v["name_ar"],
-                kind=v["kind"],
-                category=v["category_id"],
-                category_name=v["category_name"] or "Uncategorized",
-                label=v["label"],
-                label_ar=v["label_ar"],
-                grind=item.get("grind", ""),
-                temperature=item.get("temperature", ""),
-                addons=addons,
-                qty=item["qty"],
-                unit=unit,
-                total=unit * item["qty"],
-            )
-        )
+    groups = [a["option_group"] for a in addons if a["option_group"]]
+    if len(groups) != len(set(groups)):
+        raise ValueError("Choose only one option in each extras group.")
+    unit = v["price"] + sum(a["price"] for a in addons)
+    return dict(
+        image=v["image"],
+        unit_cost=v["unit_cost"] if not addons else None,
+        variant=v["id"],
+        grams=v["grams"],
+        sku=v["sku"],
+        product=v["product_id"],
+        name=v["name"],
+        name_ar=v["name_ar"],
+        kind=v["kind"],
+        category=v["category_id"],
+        category_name=v["category_name"] or "Uncategorized",
+        label=v["label"],
+        label_ar=v["label_ar"],
+        grind=item.get("grind", ""),
+        temperature=item.get("temperature", ""),
+        addons=addons,
+        qty=item["qty"],
+        unit=unit,
+        total=unit * item["qty"],
+    )
+
+
+def priced_cart():
+    from .commerce import bundle_line, ensure_stock
+
+    lines = [
+        bundle_line(item, price_single) if item.get("bundle") else price_single(item)
+        for item in session.get("cart", [])
+    ]
+    ensure_stock(lines)
     return lines
 
 
@@ -152,6 +157,10 @@ def priced_cart():
 def home():
     return render_template(
         "home.html",
+        bestsellers=bestsellers(),
+        bundles=db()
+        .execute("SELECT * FROM bundles WHERE active=1 ORDER BY id")
+        .fetchall(),
         drinks=[p for p in catalog("drink") if p["featured"]][:4],
         ground=[p for p in catalog("ground") if p["featured"]][:4],
     )
@@ -179,6 +188,17 @@ def shop():
             for p in products
             if search.lower() in (p["name"] + " " + p["name_ar"]).lower()
         ]
+    sort = request.args.get("sort", "featured")
+    if sort in ("price_asc", "price_desc"):
+        products = sorted(
+            products,
+            key=lambda p: (
+                p["starting_price"] is None,
+                (p["starting_price"] or 0) * (-1 if sort == "price_desc" else 1),
+            ),
+        )
+    elif sort == "name":
+        products = sorted(products, key=lambda p: p["name"].lower())
     return render_template(
         "shop.html",
         products=products,
@@ -259,17 +279,6 @@ def add():
         ]
         try:
             lines = priced_cart()
-            counts = {}
-            for line in lines:
-                counts[line["variant"]] = counts.get(line["variant"], 0) + line["qty"]
-            for key, count in counts.items():
-                stock = (
-                    db()
-                    .execute("SELECT stock FROM variants WHERE id=?", (key,))
-                    .fetchone()["stock"]
-                )
-                if stock is not None and count > stock:
-                    raise ValueError("Not enough stock.")
         except ValueError:
             session["cart"] = old
             raise
@@ -306,9 +315,14 @@ def cart():
     except ValueError as e:
         flash(str(e))
         lines = []
-    return render_template(
-        "cart.html", lines=lines, total=sum(l["total"] for l in lines)
-    )
+    from .commerce import promotion
+
+    total = sum(l["total"] for l in lines)
+    try:
+        _, discount = promotion(total)
+    except ValueError:
+        discount = 0
+    return render_template("cart.html", lines=lines, total=total, discount=discount)
 
 
 def receiver(area=None):
@@ -358,8 +372,15 @@ def whatsapp_message(order):
             + "".join(" / " + a["name"] for a in line["addons"])
             + f"\nLine total: {order['currency']} {line['total']/100:.2f}"
         )
+    for line in json.loads(order["items"]):
+        for c in line.get("components", []):
+            parts.append(
+                f"Bundle component: {c['qty']} × {c['name']} — {c['label']} {c.get('grind','')} {c.get('temperature','')}"
+                + "".join(" / " + a["name"] for a in c["addons"])
+            )
     parts += [
         f"Subtotal: {order['currency']} {order['subtotal']/100:.2f}",
+        f"Discount: {order['currency']} {order['discount']/100:.2f}",
         (
             f"Delivery: {order['delivery']/100:.2f}"
             if order["fee_known"]
@@ -416,6 +437,7 @@ def checkout():
                     "notes",
                     "area",
                     "slot",
+                    "whatsapp_opt_in",
                 ]
             }
             if (
@@ -460,6 +482,9 @@ def checkout():
                 )
             if total < max(area["minimum"], cents(site["minimum"])):
                 raise ValueError("Your order is below the delivery area's minimum.")
+            from .commerce import promotion
+
+            promo, discount = promotion(total)
             delivery = area["fee"] or 0
             review = dict(
                 details,
@@ -467,6 +492,8 @@ def checkout():
                 schedule=slot["label"] if slot else "",
                 delivery=delivery,
                 fee_known=area["fee"] is not None,
+                discount=discount,
+                promotion_id=promo["id"] if promo else None,
             )
             digest = hashlib.sha256(
                 json.dumps([lines, review, number["phone"]], sort_keys=True).encode()
@@ -523,11 +550,18 @@ def checkout():
                     != digest
                 ):
                     raise ValueError("Prices changed. Review your order again.")
-                counts = {}
-                for line in lines:
-                    counts[line["variant"]] = (
-                        counts.get(line["variant"], 0) + line["qty"]
-                    )
+                from .commerce import requirements
+
+                counts = requirements(lines)
+                current_promo, current_discount = promotion(
+                    sum(l["total"] for l in lines)
+                )
+                if (
+                    current_discount != discount
+                    or (current_promo["id"] if current_promo else None)
+                    != review["promotion_id"]
+                ):
+                    raise ValueError("Promotion changed. Review your order again.")
                 for vid, qty in counts.items():
                     stock = conn.execute(
                         "SELECT stock FROM variants WHERE id=?", (vid,)
@@ -560,7 +594,7 @@ def checkout():
                         site["currency"],
                         total,
                         delivery,
-                        total + delivery,
+                        total + delivery - discount,
                         json.dumps(lines),
                         number["phone"],
                         area["name"],
@@ -568,6 +602,26 @@ def checkout():
                     ),
                 )
                 oid = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+                from .customer import current_customer
+
+                customer = current_customer()
+                conn.execute(
+                    "UPDATE orders SET customer_id=?,promotion_id=?,discount=?,language=?,whatsapp_opt_in=?,consent_at=CASE WHEN ?=1 THEN CURRENT_TIMESTAMP ELSE NULL END,consent_text=? WHERE id=?",
+                    (
+                        customer["id"] if customer else None,
+                        review["promotion_id"],
+                        discount,
+                        session.get("lang", "en"),
+                        int(details["whatsapp_opt_in"] == "1"),
+                        int(details["whatsapp_opt_in"] == "1"),
+                        (
+                            "V4: Optional WhatsApp updates only when this order is confirmed and out for delivery"
+                            if details["whatsapp_opt_in"] == "1"
+                            else ""
+                        ),
+                        oid,
+                    ),
+                )
                 conn.execute(
                     "INSERT INTO order_history(order_id,status,username) VALUES (?,?,?)",
                     (oid, "Pending WhatsApp Submission", "Customer"),
@@ -579,14 +633,37 @@ def checkout():
             session["last_order"] = ref
             session["cart"] = []
             return redirect(url_for("public.confirmation", ref=ref))
+        from .commerce import promotion
+
+        _, discount = promotion(total)
+        from .customer import current_customer
+
+        customer = current_customer()
+        addresses = (
+            db()
+            .execute(
+                "SELECT * FROM customer_addresses WHERE customer_id=?",
+                (customer["id"],),
+            )
+            .fetchall()
+            if customer
+            else []
+        )
+        selected_address = next(
+            (a for a in addresses if str(a["id"]) == request.args.get("address")), None
+        )
         return render_template(
             "checkout.html",
+            customer=customer,
+            addresses=addresses,
+            selected_address=selected_address,
+            discount=discount,
             lines=lines,
             total=total,
             order_token=session["order_token"],
             areas=areas,
             slots=slots,
-            available=bool(receiver()),
+            available=any(receiver(a) for a in areas),
             is_open=store_open(site),
         )
     except ValueError as e:
@@ -596,10 +673,11 @@ def checkout():
 
 @bp.get("/order/<ref>")
 def confirmation(ref):
-    if session.get("last_order") != ref:
-        abort(404)
+    from .customer import current_customer
+
+    customer = current_customer()
     order = db().execute("SELECT * FROM orders WHERE reference=?", (ref,)).fetchone()
-    if not order:
+    if not order or not owns_order(order, customer):
         abort(404)
     link = (
         "https://wa.me/"
@@ -676,3 +754,88 @@ def recently_viewed():
     return render_template(
         "_recently_viewed.html", products=[available[i] for i in ids if i in available]
     )
+
+
+def bestsellers():
+    scores = {}
+    for row in db().execute("SELECT items FROM orders WHERE status='Delivered'"):
+        for line in json.loads(row["items"]):
+            for c in line.get("components", [line]):
+                scores[c["product"]] = scores.get(c["product"], 0) + c["qty"]
+    return sorted(
+        [p for p in catalog() if p["id"] in scores],
+        key=lambda p: scores[p["id"]],
+        reverse=True,
+    )[:4]
+
+
+@bp.post("/cart/promotion")
+def apply_promotion():
+    from .commerce import promotion
+
+    code = request.form.get("code", "").strip()[:60]
+    try:
+        promotion(sum(l["total"] for l in priced_cart()), code)
+        session["promotion"] = code
+        flash("Promotion updated.")
+    except ValueError as e:
+        flash(str(e))
+    return redirect("/cart")
+
+
+@bp.get("/bundles")
+def bundles():
+    from .commerce import bundle_line
+
+    bundles = []
+    for row in db().execute("SELECT * FROM bundles WHERE active=1 ORDER BY id"):
+        b = dict(row)
+        try:
+            b["selection"] = bundle_line({"bundle": b["id"], "qty": 1}, price_single)
+        except ValueError:
+            b["selection"] = None
+        bundles.append(b)
+    return render_template("bundles.html", bundles=bundles)
+
+
+@bp.post("/bundles/<int:bid>/add")
+def add_bundle(bid):
+    from .commerce import bundle_line
+
+    old = session.get("cart", [])
+    try:
+        item = {"bundle": bid, "qty": integer(request.form.get("qty", "1"), 1, 20)}
+        if len(old) >= 30:
+            raise ValueError("Your bag is full.")
+        session["cart"] = old + [item]
+        priced_cart()
+        flash("Bundle added.")
+    except ValueError as e:
+        session["cart"] = old
+        flash(str(e))
+    return redirect("/cart")
+
+
+@bp.post("/order/<ref>/opt-out")
+def order_opt_out(ref):
+    from .customer import current_customer
+
+    c = current_customer()
+    order = db().execute("SELECT * FROM orders WHERE reference=?", (ref,)).fetchone()
+    if not order or not owns_order(order, c):
+        abort(404)
+    db().execute("UPDATE orders SET whatsapp_opt_in=0 WHERE id=?", (order["id"],))
+    db().execute(
+        "UPDATE whatsapp_jobs SET state='cancelled',error='Customer opted out' WHERE order_id=? AND state IN ('queued','retry','blocked')",
+        (order["id"],),
+    )
+    db().commit()
+    flash("Automated WhatsApp updates stopped for this order.")
+    return redirect(url_for("public.confirmation", ref=ref))
+
+
+def owns_order(order, customer):
+    # A guest-session handoff must never bypass account logout or ownership.
+    if order["customer_id"] is not None:
+        return bool(customer and customer["id"] == order["customer_id"])
+    return session.get("last_order") == order["reference"]

@@ -91,8 +91,12 @@ def create_app(test_config=None):
     def csrf():
         if "csrf" not in session:
             session["csrf"] = secrets.token_urlsafe(32)
-        if request.method == "POST" and not secrets.compare_digest(
-            str(session["csrf"]).encode(), request.form.get("csrf", "").encode()
+        if (
+            request.method == "POST"
+            and request.endpoint != "whatsapp.webhook"
+            and not secrets.compare_digest(
+                str(session["csrf"]).encode(), request.form.get("csrf", "").encode()
+            )
         ):
             abort(400, "Invalid form token. Reload the page and try again.")
 
@@ -104,7 +108,17 @@ def create_app(test_config=None):
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; img-src 'self' data: blob:; style-src 'self'; script-src 'self'; frame-src https://www.google.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
         )
-        if request.path.startswith(("/admin", "/checkout", "/order", "/cart")):
+        if request.path.startswith(
+            (
+                "/admin",
+                "/checkout",
+                "/order",
+                "/cart",
+                "/account",
+                "/favorites",
+                "/integrations",
+            )
+        ):
             response.headers["Cache-Control"] = "no-store"
         return response
 
@@ -156,7 +170,10 @@ def create_app(test_config=None):
                 .execute("SELECT 1 FROM delivery_areas WHERE active=1 LIMIT 1")
                 .fetchone()
             )
-            configured = bool(receiver()) and bool(has_area)
+            configured = bool(has_area) and any(
+                receiver(a)
+                for a in db().execute("SELECT * FROM delivery_areas WHERE active=1")
+            )
             if configured and site["ordering"] == "1" and site["paused"] != "1":
                 if store_open(site):
                     availability = "Ordering is open"
@@ -171,7 +188,51 @@ def create_app(test_config=None):
                     availability = "Closed for immediate orders"
             elif site["paused"] == "1":
                 availability = "Ordering is paused"
+
+        def quick_option(pid):
+            variants = (
+                db()
+                .execute(
+                    "SELECT v.*,p.kind,p.grinds,p.temperature FROM variants v JOIN products p ON p.id=v.product_id WHERE p.id=? AND v.active=1",
+                    (pid,),
+                )
+                .fetchall()
+            )
+            extras = (
+                db()
+                .execute(
+                    "SELECT 1 FROM addons WHERE product_id=? AND active=1 AND price_pending=0 LIMIT 1",
+                    (pid,),
+                )
+                .fetchone()
+            )
+            if len(variants) != 1 or extras:
+                return None
+            v = variants[0]
+            grind = (v["allowed_grinds"] or v["grinds"]).split(",")
+            temp = (
+                v["allowed_temperatures"]
+                or ("hot,cold" if v["temperature"] == "both" else v["temperature"])
+            ).split(",")
+            if (
+                v["price"] is None
+                or v["stock"] == 0
+                or len(grind) > 1
+                or (v["kind"] == "drink" and len(temp) > 1)
+            ):
+                return None
+            return dict(
+                variant=v["id"],
+                grind=grind[0],
+                temperature=temp[0] if v["kind"] == "drink" else "",
+            )
+
+        from .customer import current_customer, favorite_ids
+
         return dict(
+            quick_option=quick_option,
+            current_customer=current_customer(),
+            favorite_ids=favorite_ids(),
             availability=availability,
             admin_role=current_user["role"] if current_user else None,
             media_alt=media_alt,
@@ -211,6 +272,12 @@ def create_app(test_config=None):
 
     app.register_blueprint(bp)
     app.register_blueprint(admin)
+    from . import customer, whatsapp, workspace
+
+    app.register_blueprint(customer.bp)
+    app.register_blueprint(whatsapp.bp)
+    app.register_blueprint(workspace.bp)
+    whatsapp.register_commands(app)
     from .commands import register
 
     register(app)

@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS media(id INTEGER PRIMARY KEY, filename TEXT UNIQUE NO
 CREATE TABLE IF NOT EXISTS audit(id INTEGER PRIMARY KEY, created TEXT DEFAULT CURRENT_TIMESTAMP, username TEXT NOT NULL, action TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS login_attempts(ip TEXT PRIMARY KEY, attempts INTEGER DEFAULT 0, until REAL DEFAULT 0);
 """
-LATEST_SCHEMA = 4
+LATEST_SCHEMA = 5
 
 DEFAULTS = {
     **{
@@ -184,7 +184,13 @@ def init_db():
         COMMIT;
         """
         )
-    for key, value in DEFAULTS.items():
+    if not conn.execute("SELECT 1 FROM schema_version WHERE version=5").fetchone():
+        from .v4_schema import SQL
+
+        conn.executescript(SQL)
+    from .v4_schema import DEFAULTS as V4_DEFAULTS
+
+    for key, value in {**DEFAULTS, **V4_DEFAULTS}.items():
         conn.execute("INSERT OR IGNORE INTO settings VALUES (?,?)", (key, value))
     conn.commit()
 

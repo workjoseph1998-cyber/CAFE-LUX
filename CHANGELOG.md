@@ -1,5 +1,15 @@
 # Changelog
 
+## 4.0.0 — 2026-11-18
+
+- Quiet Ritual storefront and forest operations workspace; optional customer accounts/recovery, private addresses/history/reorder and favorites.
+- Persistent bundles/promotions, inventory movements/thresholds/cost snapshots, website drafts/publishing and currency-separated reports.
+- Official signed Meta webhook, safe incoming matching, consent records, exactly two automatic notification types and durable worker with honest uncertainty handling.
+- Additive verified schema-5 migration; Windows/PythonAnywhere contracts retained, live deployment and Meta activation remain separate.
+- Area-assigned WhatsApp receivers now enable checkout without requiring a global default.
+- New migration/security/integration/browser regression coverage and V4 source package.
+
+
 ## 3.0.0 — 2026-11-17
 
 - Rebuilt the customer design system around Espresso Editorial Luxury: full-bleed imagery, oversized typography, asymmetric collection scenes, new product cards, navigation, footer and brand-story layouts.

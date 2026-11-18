@@ -28,7 +28,7 @@ def test_finder_uses_only_published_product_attributes(client, app):
 def test_recent_fragment_revalidates_visibility_and_preserves_order(client, app):
     html = client.get("/recently-viewed?ids=2,1,2,999,not-an-id").text
     assert html.find("TEST Ground") < html.find("TEST Latte")
-    assert html.count('href="/product/2"') == 1
+    assert html.count('class="product-photo" href="/product/2"') == 1
     with app.app_context():
         db().execute("UPDATE products SET active=0 WHERE id=2")
         db().execute("UPDATE categories SET active=0 WHERE id=1")

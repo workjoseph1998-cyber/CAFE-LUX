@@ -59,7 +59,7 @@ Publication requires a name, description, registered uploaded photo present on d
 Small neutral admin icons and the existing explicitly illustrative storefront fallbacks are placeholders, not real product photography. Seeding never replaces an uploaded image. Actual package artwork must come from the owner or an approved licensed source.
 
 
-### V2.1.1 visual testing shortcut
+### Optional visual testing tools
 
 Open **Catalog preview** in admin and click **Add sample images & descriptions**. This fills missing seeded images/descriptions after a verified full backup while preserving edits and draft/pricing state. The private preview shows all approved drafts immediately without publishing. See `CATALOG-PREVIEW.md`. The original seed remains draft-only and does not assign images automatically; preparing samples is an explicit action.
 

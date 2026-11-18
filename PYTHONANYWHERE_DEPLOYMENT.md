@@ -1,4 +1,4 @@
-# Café LUX 3.0 — PythonAnywhere free-plan guide
+# Café LUX 4.0 — PythonAnywhere free-plan guide
 
 Manual instructions only. Nothing is deployed by Codex or by these scripts. Windows and PythonAnywhere use the same Flask source but **separate private data directories**. Do not synchronize customer data automatically. Keep the Windows IIS/Waitress installation unchanged.
 
@@ -14,7 +14,7 @@ git checkout main
 git pull --ff-only origin main
 ```
 
-Use your own private Git authentication if required; never paste tokens into tracked files. Confirm the approved Version 3.0 commit with `git log -1 --oneline` and `cat VERSION`. Do not deploy an unreviewed branch accidentally.
+Use your own private Git authentication if required; never paste tokens into tracked files. Confirm the approved Version 4.0 commit with `git log -1 --oneline` and `cat VERSION`. Do not deploy an unreviewed branch accidentally.
 
 ## 2. Python and persistent configuration
 
@@ -37,7 +37,7 @@ Edit `~/cafe-lux-data/management.env`, replacing `YOUR_USERNAME` with your real 
 source ~/cafe-lux-data/management.env
 python manage.py migration-status
 python manage.py migrate
-python manage.py init-admin
+python manage.py init-admin  # New installations only; retain an existing administrator
 ```
 
 Admin setup prompts for your username and a unique password of at least 12 characters. No default credential exists. The data directory must stay outside `~/CAFE-LUX`; it holds SQLite accounts/orders/catalog/settings, images, backups and the session key. No source update replaces it. If you already have data, back it up before migration; automatic pre-migration snapshots are additional safeguards, not a substitute for the operator's full backup.
@@ -76,14 +76,14 @@ Uploaded photos continue through Flask's existing `/media/<filename>` route, whi
 
 Click **Reload** in the Web tab, then visit the assigned **HTTPS** URL. Confirm:
 
-- Home, `/drinks` and `/coffee` load with the existing cream-and-brown design; drafts stay hidden.
+- Home, `/drinks` and `/coffee` load with the new Quiet Ritual porcelain-and-forest design; drafts stay hidden.
 - `/admin/login` accepts your created account; unauthorized admin access redirects to login.
 - Cookies have Secure, HttpOnly and SameSite=Lax flags over HTTPS. The example trusts exactly one forwarded scheme header and no forwarded host/IP. Do not use insecure-local mode publicly.
 - Upload a real photo, set actual prices/availability and final description, publish a reviewed product, and verify selections/cart/review/WhatsApp link.
-- Configure only real delivery areas and receiving numbers. You must manually tap Send in WhatsApp; the server does not contact a messaging API.
+- Configure only real delivery areas and receiving numbers. You must manually tap Send in WhatsApp; automatic messaging stays disabled until the separate Meta integration is configured.
 - Check the Web tab error log after testing. Never include real customer data in shared screenshots.
 
-The application sets no production debug server. Keep SQLite and private data on persistent local disk. One hosted WSGI application/worker is enough; no background worker or scheduled task is required.
+The application sets no production debug server. Keep SQLite and private data on persistent local disk. The manual click-to-chat flow needs no background task. Official automatic notifications require a separate reliable always-on worker and permitted outbound Meta HTTPS; see docs/WHATSAPP.md. Free-plan limitations can prevent automation.
 
 ## 7. Future GitHub updates
 
@@ -140,6 +140,8 @@ Images are decoded, resized and stored as JPEGs. Keep uploads small and manually
 These instructions and WSGI smoke tests were prepared on Linux. No PythonAnywhere account was accessed or deployed, and no Windows VM/IIS execution is claimed.
 
 
-## V3 UI upgrade note
+## V4 upgrade and automation
 
-The V3 redesign is reviewed on `feature/cafe-lux-v3-redesign` before any merge into main. It keeps schema v4, the WSGI import, data paths, static mapping and production requirements. Do not rerun starter/sample-price tools during an existing-data UI upgrade. The new cart/Finder/recent-product requests are same-origin and require no outbound integration. See `docs/V3-UPGRADE.md`. No hosting deployment was performed.
+Follow [V4-UPGRADE.md](docs/V4-UPGRADE.md) before touching existing data. V4 advances schema 4 to 5 additively after a verified snapshot. Pause/drain web and any worker, make a full backup, extract approved source, reuse the same external data, migrate and reload only after verification. Never seed or publish samples during upgrade. No live hosting deployment was performed.
+
+For Meta automation see [WHATSAPP.md](docs/WHATSAPP.md). Free accounts may block Graph HTTPS and do not provide a reliable always-on worker; keep automation disabled until hosting supports it. WSGI and worker environments both need the protected Meta configuration; Bash exports alone do not reach WSGI. Never expose your data directory or secrets through a static mapping.

@@ -281,7 +281,7 @@ def test_existing_v2_database_migrates_without_data_loss(tmp_path):
             )
             assert (
                 db().execute("SELECT max(version) FROM schema_version").fetchone()[0]
-                == 4
+                == 5
             )
 
 

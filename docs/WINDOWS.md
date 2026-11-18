@@ -28,13 +28,6 @@ Disable ordering and drain active IIS requests before stopping. Windows Stop-Pro
 
 Run setup twice; run diagnostics; create admin; start; verify local homepage, both catalogs, configured extras/weights, mixed cart, delivery review and pending WhatsApp message. Test admin stock confirmation and image upload, stop/restart and persistence. Verify the existing IIS URL after adding its hostname. Check occupied-port refusal and that stop affects only Café LUX. No Windows VM execution is claimed from Linux development checks.
 
-## Version 2.1 upgrade
+## Version 4.0 upgrade
 
-See `MIGRATION.md` before extracting over any files. Reuse the existing dedicated data directory and administrator; do not recreate the account or replace SQLite. Setup preserves runtime.json and now includes `172.18.69.59` in the **fresh-install** example allowlist only. Existing files/environment values remain authoritative. The current VM uses `172.18.69.59:80` in IIS and `127.0.0.1:8000` in Waitress; neither binding is modified.
-
-After setup, run `manage.py migration-status`, `manage.py migrate`, then the separate `seed-starter-catalog --dry-run` / `--confirm-data-dir` commands in the migration guide. New products stay draft and unpriced. Existing accounts, uploads and order records remain. No Windows/IIS execution was performed in Linux development; test setup twice, diagnostics, occupied-port refusal, controlled stop/start and persistence on your VM before relying on it.
-
-
-## Version 3.0 UI upgrade
-
-Follow `V3-UPGRADE.md`: extract into a new directory, reuse the same external data/account/runtime configuration, run setup/diagnostics and refresh browser CSS/JS. Schema v4 and the IIS/Waitress port contract are unchanged. Do not run starter/sample-price tools as part of a redesign upgrade. No Windows VM/IIS configuration was modified by this development task.
+Follow [V4-UPGRADE.md](V4-UPGRADE.md). Extract the V4 ZIP into a new source directory, retain the same external data/session/runtime configuration, stop web and worker processes, back up, then run setup/migrate and diagnostics. Schema advances to 5 additively. Keep IIS/ARR and Waitress 127.0.0.1:8000 unchanged. Configure any Meta worker separately as a supervised task using the same virtualenv/environment; see [WhatsApp](WHATSAPP.md). No Windows VM or IIS configuration was modified during development.

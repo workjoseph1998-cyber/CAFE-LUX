@@ -145,3 +145,52 @@ if (location.hash) {
   const section = document.getElementById(location.hash.slice(1));
   if (section?.tagName === "DETAILS") section.open = true;
 }
+// Bundle editor submits a server-validated component snapshot; no prices come from the browser.
+document.querySelectorAll("[data-bundle-editor]").forEach((editor) => {
+  const field = editor.querySelector("[data-components]");
+  const list = editor.querySelector(".bundle-components");
+  const template = document.querySelector("#component-template");
+  if (!template) return;
+  let values;
+  try {
+    values = JSON.parse(field.value);
+  } catch {
+    values = [];
+  }
+  const sync = () => {
+    field.value = JSON.stringify(
+      [...list.children].map((row) =>
+        Object.fromEntries(
+          [...row.querySelectorAll("[data-component]")].map((input) => [
+            input.dataset.component,
+            input.dataset.component === "addons"
+              ? input.value.split(",").filter(Boolean).map(Number)
+              : ["variant", "qty"].includes(input.dataset.component)
+                ? Number(input.value)
+                : input.value,
+          ]),
+        ),
+      ),
+    );
+  };
+  const add = (value = { qty: 1, addons: [] }) => {
+    const row = template.content.firstElementChild.cloneNode(true);
+    row.querySelectorAll("[data-component]").forEach((input) => {
+      const v = value[input.dataset.component];
+      if (v !== undefined) input.value = Array.isArray(v) ? v.join(",") : v;
+      input.addEventListener("input", sync);
+    });
+    row
+      .querySelector("[data-remove-component]")
+      .addEventListener("click", () => {
+        row.remove();
+        sync();
+      });
+    list.append(row);
+    sync();
+  };
+  values.forEach(add);
+  editor
+    .querySelector("[data-add-component]")
+    .addEventListener("click", () => add());
+});

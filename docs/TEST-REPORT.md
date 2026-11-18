@@ -1,43 +1,25 @@
-# Café LUX 3.0 validation — 2026-11-17
+# Café LUX 4.0 validation — 2026-11-18
 
-Environment: Linux, Python 3.12, Flask 3.1.2, SQLite, headless Chromium. Data is disposable synthetic accounts/orders/products, never the Windows VM or a live hosted database. No WhatsApp message was sent.
+All application tests run on isolated temporary SQLite databases/uploads, with synthetic accounts/orders/prices. No production database, live hosting, real customer record or actual WhatsApp send is used.
 
-## Application verification
+## Automated application coverage
 
-**106 tests pass** with `.venv/bin/python -m pytest -q`.
+**144 pytest tests pass**: retained catalog, publication, upload, variant/customization, stock, checkout idempotency, CSRF, staff permissions, backup/restore, legacy migration, WSGI and Windows source-contract regressions, plus 38 new V4 cases.
 
-The complete retained regression suite covers authentication/roles/session revocation, CSRF, validated uploads, backup/restore and migration compatibility, draft privacy, independent weights/prices/extras, mixed carts, server totals, delivery minimums/unknown fees, store pauses/closures/scheduling, idempotent/concurrent pending submissions, receiver routing, stock deduction/restoration and historical order snapshots. The existing sample preparation/publication commands remain explicit and preserve owner edits.
+V4 coverage includes optional account creation/login, one-use recovery and session revocation, account/order/address isolation (including logout/shared-browser ownership), no historical phone linking, favorites merge/visibility, reordering at current prices/stock, server-calculated discounts, usage limits/cancellation and a concurrent last-use promotion race, bundle aggregate inventory and exact cancellation reversal, inventory movements, draft-versus-published website content, currency-separated reports and missing-cost suppression, customer privacy management and complete schema-5 customer-data backup/CLI restore.
 
-New V3 cases verify:
+Integration tests validate webhook challenge/HMAC rejection, exact incoming sender/reference/time/receiver binding, unmatched/ambiguous review and duplicate-message handling; only the two authorized trigger types; no consent/no queue; mock outcomes never sent; approved template requirements; safe bounded retry and unknown-outcome handling; lost-worker leases; consent withdrawal; provider callback receiver binding, monotonic delivery state and late-callback isolation across manually retried attempts. Test configuration forbids real Graph HTTP, using only injected transport contracts or explicit mock state. No claim of externally verified Meta delivery.
 
-- Coffee Finder filters current published products using their actual type/temperature/roast fields, excludes drafts and does not invent metadata. Invalid filter values are rejected and empty matches work.
-- Recently viewed fragments preserve requested product order, deduplicate IDs, sanitize malformed input and exclude newly hidden products/categories. Only public catalog metadata is returned.
-- Drawer markup uses the real server cart/CSRF forms; totals and counts reflect posted changes. Loading a bag does not create orders or deduct stock, and unprotected mutations still fail.
-- New pages retain Arabic RTL and privacy behavior.
-- Public ordering labels derive from configured business state without changing that state or creating orders.
+## Browser coverage
 
-Source compilation, dependency consistency and Git whitespace checks run before packaging. The complete source ZIP is integrity-tested and excludes private data, keys, logs and virtual environments.
+Run `scripts/capture_screenshots.py` for retained ordering/admin acceptance and `scripts/check_v4_browser.py` for new persistent features, using Chromium/Playwright Linux headless. Reports/screenshots live under `screenshots/v4/`.
 
-## Chromium acceptance and actual screenshots
+Retained acceptance covers draft visibility, admin tables at 1366/1440/1920, sidebar/density, secure media upload, validated publication, real product options/live pricing, cart drawer editing, full-page/no-JavaScript fallback, delivery/review/manual WhatsApp semantics, Finder, recently viewed and English/Arabic layouts. Customer page overflow checks cover widths 320/360/390/430/768/1024.
 
-Run `.venv/bin/python scripts/capture_screenshots.py`. Current captures/report are in **`screenshots/v3/`**. The runner uses a temporary database and local ephemeral-port server and discards all synthetic data afterward.
+V4 acceptance exercises guest favorites → registration → saved profile/email/address → quick add and bundle → applied discount → saved-address checkout and opt-in → review → pending manual-Send confirmation → private history/reorder → staff confirmation and mock durable worker. New account/favorites/bundle/admin screens are checked at 320/390/768/1366, and new Arabic RTL screens are verified. Browser console errors must be empty. The external WhatsApp Send link is deliberately not clicked.
 
-Verified:
+## Packaging and limits
 
-- New editorial homepage, separate drinks/coffee catalogs, real featured products and polished draft-only empty states.
-- New admin overview, drinks/coffee tables, editor and orders at **1366×768, 1440×900 and 1920×1080**; collapse/expand, tooltips and remembered density; search/filter/bulk edits, photo upload, valid publication, order inspection/status change and operations screens.
-- Actual signed-out customer views after explicit synthetic catalog publication. No live offers are inferred from screenshots.
-- Product quantity buttons, exclusive extra choice and live display totals; mixed drink/coffee cart; drawer add/update counts/totals; standalone cart and native no-JavaScript fallback.
-- Real area-fee display: synthetic $20.00 subtotal + $2.50 delivery = $22.50, followed by explicit review and pending WhatsApp order. The URL/message is generated but never opened/sent to an actual business.
-- Mobile bag drawer has an independent scrolling item area and visible checkout footer. Mobile checkout item disclosure works; final review remains complete.
-- No document-level horizontal overflow at **320, 360, 390, 430, 768 and 1024px** across home, both catalogs, product, cart, checkout and Finder; laptop sizes also pass.
-- Coffee Finder returns the five configured cold drinks; recently viewed stores public numeric IDs only and reuses current server data. Mobile menu, Arabic RTL and reduced-motion mode work.
-- No JavaScript runtime errors reported.
+`pip check` reports no broken requirements. Source ZIP uses tracked files only, excludes databases/runtime directories/secrets/virtualenv/logs and carries a separate SHA-256 checksum. Upgrade/restore tests verify integrity and foreign-key consistency. Git recovery bundle was verified before V4 edits.
 
-At 1366×768 the compact admin tables show eight drink rows and nine order rows; all four packaged coffees fit. Tables scroll for larger/narrow inventories and do not remove columns. At 1440×900 the checks show 11/12 drink/order rows; at 1920×1080, 15/15 rows.
-
-## Limits
-
-These results do not claim execution on Windows Server 2022/IIS, PythonAnywhere, iOS Safari or Android Chrome. Browser widths are Chromium emulation. Verify the actual deployment/proxy/cookie/NTFS behavior and real devices before live use. WhatsApp Send, receipt and delivery were not tested or claimed. No hosting deployment or main-branch merge was performed.
-
-V3 preserves schema v4 and actual business settings/accounts/orders/uploads/catalog/prices. UI tests publish only temporary fixtures; installing V3 does not seed/reprice/publish business data. System fonts can differ slightly by operating system. Cross-document view transitions are progressive enhancement; unsupported browsers retain normal navigation, and reduced-motion disables animation. Admin translations remain English; public missing copy translations fall back to English.
+Linux application/browser checks do not constitute actual Windows Server/IIS or PythonAnywhere deployment, a production load/penetration test, or real Meta business onboarding/template approval/delivery verification. The host must provide HTTPS, protected service environments, allowed outbound Graph networking and a supervised worker before live automation. PythonAnywhere free limits can prevent that. GitHub API access is network-blocked here, so releases/default-branch settings/branch protection remain externally unverified. Merge, final release and destructive cleanup await the brief's required review/approval.

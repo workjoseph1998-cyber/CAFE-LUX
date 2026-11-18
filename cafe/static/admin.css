@@ -1803,3 +1803,220 @@ body[data-density="comfortable"] .orders-table td {
     scroll-behavior: auto;
   }
 }
+/* V4 workspace */
+:root {
+  --ink: #173d32;
+  --accent: #285a44;
+  --paper: #fff;
+  --line: #dce5df;
+}
+.admin-app {
+  background: #f4f7f5;
+  color: #18392e;
+}
+.admin-sidebar {
+  background: #173d32;
+  color: #e9f0e7;
+  border: 0;
+}
+.admin-brand,
+.admin-sidebar a,
+.admin-sidebar button {
+  color: #e9f0e7;
+}
+.admin-sidebar nav a.selected {
+  background: #e9f0e7;
+  color: #173d32;
+}
+.admin-sidebar nav a:hover {
+  background: #305644;
+}
+.admin-sidebar nav a.selected:hover {
+  background: #e9f0e7;
+}
+.admin-sidebar .nav-group,
+.workspace-note small {
+  color: #b3c9ba;
+}
+.brand-symbol {
+  background: #d8e8d4;
+  color: #173d32;
+}
+.admin-topbar {
+  background: #fff;
+  border-color: #dce5df;
+}
+.admin-app .panel,
+.admin-app .editor-section {
+  border-radius: 12px;
+  border-color: #dce5df;
+  background: #fff;
+}
+.admin-app .button {
+  background: #285a44;
+  border-color: #285a44;
+  border-radius: 7px;
+}
+.admin-app .button.outline {
+  background: #fff;
+  color: #285a44;
+}
+.admin-app input,
+.admin-app select,
+.admin-app textarea {
+  border-radius: 7px;
+  border-color: #cddbd0;
+}
+.admin-app h1 {
+  letter-spacing: -0.04em;
+  font-weight: 600;
+}
+.admin-app h2 {
+  letter-spacing: -0.025em;
+}
+.report-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.inventory-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+  margin: 20px 0;
+}
+.inventory-cards .panel {
+  margin: 0;
+}
+.inventory-cards summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 5px;
+}
+.admin-app details.panel {
+  padding: 20px;
+}
+.admin-app details.panel > form {
+  margin-top: 20px;
+}
+.bundle-component {
+  border: 1px solid #dce5df;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 15px 0;
+}
+.advanced-json {
+  font-size: 0.75rem;
+}
+.advanced-json textarea {
+  min-height: 60px;
+}
+.admin-app .stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin: 20px 0;
+}
+.admin-app .stats strong {
+  display: block;
+  font-size: 1.5rem;
+  margin-top: 12px;
+}
+.admin-sidebar {
+  overflow-y: auto;
+}
+.sidebar-foot {
+  margin-top: 24px;
+}
+.admin-app textarea {
+  min-height: 85px;
+}
+.admin-footnote {
+  color: #577261;
+}
+.admin-sidebar .sidebar-foot {
+  border-color: #446650;
+}
+.admin-app .history-line {
+  font-size: 0.78rem;
+}
+.admin-sidebar nav a {
+  min-height: 36px;
+}
+.admin-content {
+  max-width: 1800px;
+}
+.admin-app .panel details {
+  margin-block: 16px;
+}
+@media (max-width: 900px) {
+  .report-grid,
+  .inventory-cards {
+    grid-template-columns: 1fr;
+  }
+}
+.sales-chart-panel {
+  margin-block: 20px;
+}
+.sales-chart {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px 35px;
+}
+.sales-day {
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr) 100px;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.72rem;
+}
+.sales-day svg {
+  height: 8px;
+  width: 100%;
+  background: #e8eee8;
+  border-radius: 4px;
+  fill: #397358;
+}
+.sales-day strong {
+  text-align: end;
+  font-weight: 500;
+}
+@media (max-width: 900px) {
+  .sales-chart {
+    grid-template-columns: 1fr;
+  }
+}
+.admin-app .admin-sidebar nav a,
+.admin-app .admin-sidebar .sidebar-foot a,
+.admin-app .admin-sidebar .sidebar-foot button {
+  color: #dcebdd;
+}
+.admin-app .admin-sidebar nav a.selected {
+  color: #173d32;
+  background: #e9f0e7;
+}
+.admin-app .admin-sidebar nav a:hover {
+  background: #305644;
+  color: white;
+}
+.admin-app .admin-sidebar nav a.selected:hover {
+  background: #e9f0e7;
+  color: #173d32;
+}
+.admin-app .admin-sidebar .workspace-note,
+.admin-app .admin-sidebar .workspace-note small {
+  color: #c4d9c6;
+}
+.summary-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+@media (max-width: 1100px) {
+  .summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 720px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

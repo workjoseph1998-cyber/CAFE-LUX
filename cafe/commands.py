@@ -60,7 +60,7 @@ def register(app):
 
     @app.cli.command("init-db")
     def init():
-        click.echo("Database schema v4 initialized; existing data retained.")
+        click.echo("Database schema v5 initialized; existing data retained.")
 
     @app.cli.command("create-admin")
     @click.option("--username", prompt=True)
@@ -135,6 +135,7 @@ def register(app):
                 2,
                 3,
                 4,
+                5,
             ):
                 raise click.ClickException("Backup integrity/version failed.")
             conn.close()

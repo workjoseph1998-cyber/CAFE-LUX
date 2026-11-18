@@ -330,7 +330,7 @@ def test_backup_restore_and_migration(app, client):
     with again.app_context():
         assert db().execute("SELECT count(*) FROM orders").fetchone()[0] == 1
         assert (
-            db().execute("SELECT max(version) FROM schema_version").fetchone()[0] == 4
+            db().execute("SELECT max(version) FROM schema_version").fetchone()[0] == 5
         )
 
 

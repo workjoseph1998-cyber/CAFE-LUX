@@ -395,7 +395,7 @@ def test_v20_migration_backup_and_restart_preserves_every_record(tmp_path):
         with app.app_context():
             assert (
                 db().execute("SELECT max(version) FROM schema_version").fetchone()[0]
-                == 4
+                == 5
             )
             for table, rows in before.items():
                 after = [
@@ -477,7 +477,7 @@ def test_windows_contract_and_status_before_migration(tmp_path):
     assert (
         result.returncode == 0
         and "Current schema: 3" in result.stdout
-        and "target: 4" in result.stdout
+        and "target: 5" in result.stdout
     )
     with sqlite3.connect(data / "cafe.sqlite3") as conn:
         assert (

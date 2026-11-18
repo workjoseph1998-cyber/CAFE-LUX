@@ -1,4 +1,4 @@
-"""V2.1 browser acceptance. All accounts, prices and orders live in disposable data."""
+"""Retained ordering and operations browser acceptance. All accounts, prices and orders live in disposable data."""
 
 import io
 import json
@@ -17,7 +17,7 @@ from werkzeug.serving import make_server
 from playwright.sync_api import sync_playwright, expect
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = ROOT / "screenshots" / "v3"
+OUTPUT = ROOT / "screenshots" / "v4"
 
 
 def main():
@@ -137,7 +137,13 @@ def main():
                     page.wait_for_load_state("networkidle")
                     assert page.locator("body").evaluate(
                         "(e)=>e.scrollWidth<=innerWidth"
-                    ), (path + " body overflow")
+                    ), (
+                        path + " body overflow",
+                        page.viewport_size,
+                        page.evaluate(
+                            "[...document.querySelectorAll('body *')].filter(e=>e.getBoundingClientRect().right>innerWidth+1||e.getBoundingClientRect().left<-1).map(e=>[e.tagName,e.className,e.getBoundingClientRect().width,e.getBoundingClientRect().left]).slice(0,12)"
+                        ),
+                    )
 
                 def shot(name, full=False):
                     if "cart-drawer" in name:
@@ -460,7 +466,7 @@ def main():
                 page.get_by_role("button", name="Close bag", exact=True).click()
                 goto("/checkout")
                 shot("checkout-mobile", True)
-                page.fill("[name=name]", "Synthetic V3 Customer")
+                page.fill("[name=name]", "Synthetic V4 Customer")
                 page.fill("[name=phone]", "+96171111111")
                 page.fill("[name=address]", "Fictional browser test street")
                 page.fill("[name=building]", "Synthetic test building")

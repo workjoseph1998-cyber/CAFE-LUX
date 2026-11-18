@@ -13,7 +13,7 @@ if not any(files):
     raise SystemExit("Stage the release source before packaging.")
 out = root / "dist"
 out.mkdir(exist_ok=True)
-archive = out / "Cafe-LUX-Version-3.0-Espresso-Editorial.zip"
+archive = out / "Cafe-LUX-Version-4.0-Quiet-Ritual.zip"
 with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as z:
     for name in files:
         if not name:
@@ -27,7 +27,7 @@ with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as z:
             or path.name == ".env"
         ):
             raise SystemExit("Unsafe tracked release file: " + name)
-        z.write(root / path, arcname="Cafe-LUX-Version-3.0/" + name)
+        z.write(root / path, arcname="Cafe-LUX-Version-4.0/" + name)
 checksum = hashlib.sha256(archive.read_bytes()).hexdigest()
 (out / (archive.name + ".sha256")).write_text(checksum + "  " + archive.name + "\n")
 print(archive)
